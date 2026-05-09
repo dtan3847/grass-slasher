@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Grass Slasher</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: monospace;
+    color: #eee;
+    user-select: none;
+  }
+  #ui {
+    display: flex;
+    gap: 24px;
+    padding: 8px 20px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  #ui span { display: flex; align-items: center; gap: 4px; }
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    cursor: crosshair;
+    border: 2px solid #333;
+  }
+  #shop {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #ccc;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+    transition: background 0.1s;
+  }
+  .btn:hover:not(:disabled) { background: #3a3a3a; border-color: #7c7; color: #fff; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.leveled { border-color: #5a5; }
+  #hints {
+    font-size: 11px;
+    color: #555;
+    margin-top: 6px;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <span>&#128142; <b id="gem-count">0</b></span>
+  <span>&#9876; <b id="slash-count">0</b> cuts</span>
+  <span>&#127807; <b id="grass-count">0</b>/60 alive</span>
+</div>
+
+<canvas id="game" width="640" height="480"></canvas>
+
+<div id="shop">
+  <button class="btn" id="btn-gems"   onclick="buyUpgrade('gemMult')">&#128142; +Yield Lv1 (10)</button>
+  <button class="btn" id="btn-range"    onclick="buyUpgrade('slashRange')">&#128207; Sword Size Lv1 (20)</button>
+  <button class="btn" id="btn-auto"     onclick="buyUpgrade('autoSlash')">&#129302; Auto-Slash Lv1 (50)</button>
+  <button class="btn" id="btn-density"  onclick="buyUpgrade('density')">&#127807; More Grass Lv1 (40)</button>
+</div>
+
+<div id="hints">WASD / Arrows = move &nbsp;|&nbsp; SPACE or Z = slash &nbsp;|&nbsp; Grass regrows automatically</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx    = canvas.getContext('2d');
+const W = 640, H = 480;
+const TILE = 32;
+const COLS = Math.floor(W / TILE);
+const ROWS = Math.floor(H / TILE);
+
+// ── State ──────────────────────────────────────────────────────────────────
+let gemCount = 0, slashCount = 0;
+const keys = {};
+
+const upgrades = {
+  gemMult:    { level: 0, baseCost: 10,  costMult: 1.6 },
+  slashRange: { level: 0, baseCost: 20,  costMult: 1.7 },
+  autoSlash:  { level: 0, baseCost: 50,  costMult: 2.2 },
+  density:    { level: 0, baseCost: 40,  costMult: 1.8 },
+};
+
+// ── Player ─────────────────────────────────────────────────────────────────
+const player = {
+  x: Math.floor(W / 2 / TILE) * TILE + TILE / 2, y: Math.floor(H / 2 / TILE) * TILE + TILE / 2,
+  facing: 0,
+  slashCardinal: 0,
+  slashState: 'idle',  // 'idle' | 'sweeping' | 'retracting'
+  slashTimer: 0,
+  sweepDur: 8,
+  retractDur: 5,
+  autoSlashCooldown: 0,
+  get speed()      { return 2.8; },
+  get slashRange() { return 44 + upgrades.slashRange.level * 12; },
+};
+
+// ── Grass ──────────────────────────────────────────────────────────────────
+const GRASS_BASE = 60;
+const grasses = [];
+const occupiedCells = new Set();
+
+function cellKey(col, row) { return col * 1000 + row; }
+
+function grassCapacity() {
+  return GRASS_BASE + upgrades.density.level * 15;
+}
+
+function spawnGrass() {
+  const playerCol = Math.floor(player.x / TILE);
+  const playerRow = Math.floor(player.y / TILE);
+  for (let attempts = 0; attempts < 80; attempts++) {
+    const col = Math.floor(Math.random() * COLS);
+    const row = Math.floor(Math.random() * ROWS);
+    if (col === playerCol && row === playerRow) continue;
+    const key = cellKey(col, row);
+    if (occupiedCells.has(key)) continue;
+    occupiedCells.add(key);
+    grasses.push({
+      x: col * TILE + TILE / 2,
+      y: row * TILE + TILE / 2,
+      alive: true,
+      respawnTimer: 0,
+      respawnTime: 300 + Math.random() * 180,
+      hue: 100 + Math.random() * 35,
+      flip: Math.random() < 0.5,
+    });
+    return true;
+  }
+  return false;
+}
+
+function initGrass() {
+  for (let i = 0; i < GRASS_BASE; i++) spawnGrass();
+}
+
+// ── Particles, floats, gems ────────────────────────────────────────────────
+const particles = [];
+const floats    = [];
+const gems      = [];
+
+function spawnGem(x, y, amount) {
+  const angle = Math.random() * Math.PI * 2;
+  const speed = 0.9 + Math.random() * 1.4;
+  gems.push({
+    x, y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed - 1.5, // pop up
+    amount,
+    life: 1800,    // 30s @ 60fps
+    rest: false,
+    bob: Math.random() * Math.PI * 2,
+  });
+}
+
+function addCutParticles(x, y, hue) {
+  for (let i = 0; i < 7; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 1.2 + Math.random() * 2.5;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s - 1,
+      life: 22 + Math.random() * 18,
+      maxLife: 40,
+      hue,
+      size: 2 + Math.random() * 3,
+    });
+  }
+}
+
+function addFloat(x, y, amount) {
+  floats.push({ x: x - 8, y: y - 10, vy: -0.9, life: 55, amount });
+}
+
+// ── Slash arcs and hit tiles ────────────────────────────────────────────────
+// Cardinal index: 0=right, 1=down, 2=left, 3=up
+// SLASH_ARCS: sweep angle from `start` by `delta` over sweepDur frames.
+//   right: up→right (CW),    down: left→down (CCW)
+//   left:  up→left (CCW),    up:   right→up  (CCW)
+const SLASH_ARCS = [
+  { start: -Math.PI/2, delta:  Math.PI/2 }, // right
+  { start:  Math.PI,   delta: -Math.PI/2 }, // down
+  { start: -Math.PI/2, delta: -Math.PI/2 }, // left
+  { start:  0,         delta: -Math.PI/2 }, // up
+];
+
+// Tiles (offsets from player) hit by each cardinal slash — covers the swept arc
+const SLASH_TILES = [
+  [[ 0,-1], [ 1,-1], [ 1, 0]], // right: up, ur, right
+  [[-1, 0], [-1, 1], [ 0, 1]], // down: left, dl, down
+  [[ 0,-1], [-1,-1], [-1, 0]], // left: up, ul, left
+  [[ 1, 0], [ 1,-1], [ 0,-1]], // up: right, ur, up
+];
+
+function snapCardinal(angle) {
+  const a = Math.atan2(Math.sin(angle), Math.cos(angle));
+  if (a > -Math.PI*3/4 && a <= -Math.PI/4) return 3; // up
+  if (a > -Math.PI/4   && a <=  Math.PI/4) return 0; // right
+  if (a >  Math.PI/4   && a <=  Math.PI*3/4) return 1; // down
+  return 2; // left
+}
+
+// ── Slash logic ────────────────────────────────────────────────────────────
+let slashQueued = false;
+
+function trySlash() {
+  if (player.slashState === 'idle' || player.slashState === 'retracting') {
+    startSweep(snapCardinal(player.facing));
+  } else {
+    slashQueued = true;
+  }
+}
+
+function startSweep(cardinal) {
+  player.slashState    = 'sweeping';
+  player.slashTimer    = player.sweepDur;
+  player.slashCardinal = cardinal;
+  slashCount++;
+  checkSlashHits();
+}
+
+function startRetract() {
+  player.slashState = 'retracting';
+  player.slashTimer = player.retractDur;
+}
+
+function checkSlashHits() {
+  const tiles = SLASH_TILES[player.slashCardinal];
+  const half  = TILE * 0.5;
+  for (const [tdx, tdy] of tiles) {
+    const cx = player.x + tdx * TILE;
+    const cy = player.y + tdy * TILE;
+    for (const g of grasses) {
+      if (!g.alive) continue;
+      if (Math.abs(g.x - cx) < half && Math.abs(g.y - cy) < half) cutGrass(g);
+    }
+  }
+}
+
+function cutGrass(g) {
+  g.alive        = false;
+  g.respawnTimer = g.respawnTime;
+  g.cutAnim      = 1;
+  addCutParticles(g.x, g.y, g.hue);
+  // Compounding yield: Lv0=1, Lv1=1, Lv2=2, Lv3=3, Lv4=5, Lv5=7, Lv6=11, Lv7=17 ...
+  const amount = Math.max(1, Math.floor(Math.pow(1.5, upgrades.gemMult.level)));
+  spawnGem(g.x, g.y, amount);
+}
+
+// ── Upgrades ───────────────────────────────────────────────────────────────
+function getUpgradeCost(id) {
+  const u = upgrades[id];
+  return Math.floor(u.baseCost * Math.pow(u.costMult, u.level));
+}
+
+function buyUpgrade(id) {
+  const cost = getUpgradeCost(id);
+  if (gemCount < cost) return;
+  gemCount -= cost;
+  upgrades[id].level++;
+  if (id === 'density') {
+    const cap = grassCapacity();
+    while (grasses.length < cap) {
+      if (!spawnGrass()) break;
+    }
+  }
+}
+
+// ── Input ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if ((e.code === 'Space' || e.code === 'KeyZ') && !e.repeat) {
+    e.preventDefault();
+    trySlash();
+  }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// Mouse click = slash toward cursor
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top)  * (H / rect.height);
+  player.facing = Math.atan2(my - player.y, mx - player.x);
+  trySlash();
+});
+
+// ── Collision ───────────────────────────────────────────────────────────────
+// Player AABB half = 7, shrub AABB half = 11 → blocked if both axes overlap.
+function blockedAt(nx, ny) {
+  const halfSum = 7 + 11;
+  for (const g of grasses) {
+    if (!g.alive) continue;
+    if (Math.abs(g.x - nx) < halfSum && Math.abs(g.y - ny) < halfSum) return true;
+  }
+  return false;
+}
+
+// ── Update ─────────────────────────────────────────────────────────────────
+function update() {
+  // Movement — always allowed. Slash arc cardinal locks at swing start
+  // (player.slashCardinal); player.facing is free to update mid-swing so the
+  // next queued slash can chain in a new direction.
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
+  if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
+  if (keys['ArrowUp']    || keys['KeyW']) dy -= 1;
+  if (keys['ArrowDown']  || keys['KeyS']) dy += 1;
+
+  if (dx !== 0 || dy !== 0) {
+    const len = Math.hypot(dx, dy);
+    player.facing = Math.atan2(dy, dx);
+    const stepX = (dx / len) * player.speed;
+    const stepY = (dy / len) * player.speed;
+    const nx = Math.max(14, Math.min(W - 14, player.x + stepX));
+    const ny = Math.max(14, Math.min(H - 14, player.y + stepY));
+    // Axis-separated slide
+    if (!blockedAt(nx, player.y)) player.x = nx;
+    if (!blockedAt(player.x, ny)) player.y = ny;
+  }
+
+  // Slash state machine
+  if (player.slashTimer > 0) {
+    player.slashTimer--;
+    if (player.slashTimer === 0) {
+      if (player.slashState === 'sweeping') {
+        if (slashQueued) {
+          slashQueued = false;
+          startSweep(snapCardinal(player.facing));
+        } else {
+          startRetract();
+        }
+      } else if (player.slashState === 'retracting') {
+        player.slashState = 'idle';
+      }
+    }
+  }
+
+  // Auto-slash: cooldown so player gets idle frames to move between slashes
+  if (player.autoSlashCooldown > 0) player.autoSlashCooldown--;
+  if (upgrades.autoSlash.level > 0 && player.slashState === 'idle' && player.autoSlashCooldown <= 0) {
+    let nearest = null, nearDist = Infinity;
+    const range = player.slashRange * 0.95;
+    for (const g of grasses) {
+      if (!g.alive) continue;
+      const d = Math.hypot(g.x - player.x, g.y - player.y);
+      if (d < range && d < nearDist) { nearDist = d; nearest = g; }
+    }
+    if (nearest) {
+      player.facing = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+      // Cooldown scales down with level: Lv1=36f, Lv2=26f, Lv3=16f, Lv4+=10f
+      player.autoSlashCooldown = Math.max(10, 46 - upgrades.autoSlash.level * 10);
+      trySlash();
+    }
+  }
+
+  // Grass respawn
+  for (const g of grasses) {
+    if (!g.alive) {
+      if (g.cutAnim > 0) g.cutAnim -= 0.05;
+      g.respawnTimer--;
+      if (g.respawnTimer <= 0) g.alive = true;
+    }
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  for (let i = floats.length - 1; i >= 0; i--) {
+    const f = floats[i];
+    f.y += f.vy; f.life--;
+    if (f.life <= 0) floats.splice(i, 1);
+  }
+
+  // Gems: physics + pickup
+  const pickupDist = 14;
+  for (let i = gems.length - 1; i >= 0; i--) {
+    const gm = gems[i];
+    if (!gm.rest) {
+      gm.x += gm.vx;
+      gm.y += gm.vy;
+      gm.vy += 0.18;            // gravity-ish
+      gm.vx *= 0.88;            // friction
+      gm.vy *= 0.94;
+      // bounds bounce
+      if (gm.x < 8)     { gm.x = 8;     gm.vx *= -0.4; }
+      if (gm.x > W - 8) { gm.x = W - 8; gm.vx *= -0.4; }
+      if (gm.y < 8)     { gm.y = 8;     gm.vy *= -0.4; }
+      if (gm.y > H - 8) { gm.y = H - 8; gm.vy *= -0.4; }
+      if (Math.abs(gm.vx) < 0.08 && Math.abs(gm.vy) < 0.08) {
+        gm.rest = true;
+        gm.vx = 0; gm.vy = 0;
+      }
+    } else {
+      gm.bob += 0.08;
+    }
+    // pickup
+    if (Math.abs(gm.x - player.x) < pickupDist && Math.abs(gm.y - player.y) < pickupDist) {
+      gemCount += gm.amount;
+      addFloat(gm.x, gm.y, gm.amount);
+      gems.splice(i, 1);
+      continue;
+    }
+    gm.life--;
+    if (gm.life <= 0) gems.splice(i, 1);
+  }
+}
+
+// ── Draw helpers ────────────────────────────────────────────────────────────
+function drawGrass(g) {
+  if (!g.alive) {
+    // Stump while regrowing; full shrub fades in near end
+    const prog = 1 - g.respawnTimer / g.respawnTime;
+    if (prog > 0.7) {
+      ctx.globalAlpha = (prog - 0.7) / 0.3 * 0.85;
+      drawShrub(g, 0.55);
+      ctx.globalAlpha = 1;
+    }
+    return;
+  }
+  drawShrub(g, 1);
+}
+
+function drawShrub(g, scale) {
+  const cx = g.x, cy = g.y, h = g.hue;
+  const dark = `hsl(${h}, 60%, 18%)`;
+  const mid  = `hsl(${h}, 62%, 34%)`;
+  const lite = `hsl(${h + 10}, 70%, 55%)`;
+  const phase = g.flip ? Math.PI / 9 : 0;
+
+  const spikes = 9;
+  const outerR = 13 * scale;
+  const innerR = 7  * scale;
+
+  function spikePath(grow) {
+    ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+      const r = (i % 2 === 0 ? outerR : innerR) + grow;
+      const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2 + phase;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  // Dark outline (slightly bigger silhouette)
+  ctx.fillStyle = dark;
+  spikePath(1.5);
+  ctx.fill();
+
+  // Mid spikes
+  ctx.fillStyle = mid;
+  spikePath(0);
+  ctx.fill();
+
+  // Highlight blob upper-left
+  ctx.fillStyle = lite;
+  ctx.beginPath();
+  ctx.arc(cx - 3 * scale, cy - 4 * scale, 2.5 * scale, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawPlayer() {
+  ctx.save();
+  ctx.translate(player.x, player.y);
+
+  // Shadow at feet
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(0, 14, 9, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Hat (small triangle on top)
+  ctx.fillStyle = '#2d6b2d';
+  ctx.beginPath();
+  ctx.moveTo(-7, -10);
+  ctx.lineTo( 7, -10);
+  ctx.lineTo( 0, -16);
+  ctx.closePath();
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#e8c46a';
+  ctx.fillRect(-6, -10, 12, 8);
+
+  // Tunic body
+  ctx.fillStyle = '#3d8b3d';
+  ctx.fillRect(-7, -2, 14, 14);
+
+  // Tunic belt
+  ctx.fillStyle = '#2d6b2d';
+  ctx.fillRect(-7, 10, 14, 2);
+
+  // Eyes
+  ctx.fillStyle = '#222';
+  const ex = Math.cos(player.facing) * 2;
+  ctx.fillRect(-3 + ex, -7, 2, 2);
+  ctx.fillRect( 1 + ex, -7, 2, 2);
+
+  // Sword: sweep arc (full length, angle interpolates) → retract (angle locked, length shrinks)
+  if (player.slashState !== 'idle') {
+    const arc = SLASH_ARCS[player.slashCardinal];
+    let angle, swordLen;
+    if (player.slashState === 'sweeping') {
+      const t = 1 - player.slashTimer / player.sweepDur; // 0→1
+      angle    = arc.start + t * arc.delta;
+      swordLen = TILE + upgrades.slashRange.level * 10;
+    } else { // retracting
+      angle    = arc.start + arc.delta; // hold at end angle
+      const t  = player.slashTimer / player.retractDur; // 1→0
+      swordLen = (TILE + upgrades.slashRange.level * 10) * t;
+    }
+
+    if (swordLen > 1) {
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.fillStyle = 'rgba(220, 235, 255, 0.92)';
+      ctx.fillRect(9, -3, swordLen, 6);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fillRect(9, -3, swordLen, 2);
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = (p.life / p.maxLife) * 0.9;
+    ctx.fillStyle   = `hsl(${p.hue},70%,55%)`;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawFloats() {
+  ctx.font = 'bold 12px monospace';
+  for (const f of floats) {
+    ctx.globalAlpha = Math.min(1, f.life / 30);
+    ctx.fillStyle   = '#7fff60';
+    ctx.fillText(`+${f.amount}`, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── Draw ground ─────────────────────────────────────────────────────────────
+function drawGround() {
+  // Base dirt
+  ctx.fillStyle = '#3a5e20';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle darker patches
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  const patches = [
+    [80,  60,  120, 90],
+    [320, 200, 100, 80],
+    [500, 350, 130, 70],
+    [150, 380, 90,  60],
+    [440, 80,  110, 75],
+  ];
+  for (const [x, y, w, h] of patches) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Grid lines (very faint)
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+  ctx.lineWidth   = 0.5;
+  for (let x = 0; x <= W; x += 32) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y <= H; y += 32) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+function drawGems() {
+  for (const gm of gems) {
+    const yOff = gm.rest ? Math.sin(gm.bob) * 1.2 : 0;
+    const blink = gm.life < 240 && (Math.floor(gm.life / 8) % 2 === 0);
+    if (blink) continue;
+    ctx.save();
+    ctx.translate(gm.x, gm.y + yOff);
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, 6 - yOff, 4, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // diamond gem shape
+    ctx.fillStyle = '#22c860';
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(4,  0);
+    ctx.lineTo(0,  6);
+    ctx.lineTo(-4, 0);
+    ctx.closePath();
+    ctx.fill();
+    // edge outline
+    ctx.strokeStyle = '#0a4020';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(-2, -1);
+    ctx.lineTo(0, -3);
+    ctx.lineTo(0,  1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── UI ──────────────────────────────────────────────────────────────────────
+function updateUI() {
+  document.getElementById('gem-count').textContent = gemCount;
+  document.getElementById('slash-count').textContent = slashCount;
+  document.getElementById('grass-count').textContent = grasses.filter(g => g.alive).length;
+
+  const defs = [
+    ['btn-gems',  'gemMult',    lvl => `&#128142; +Yield Lv${lvl+1}`],
+    ['btn-range',   'slashRange', lvl => `&#128207; Sword Size Lv${lvl+1}`],
+    ['btn-auto',    'autoSlash',  lvl => `&#129302; Auto-Slash Lv${lvl+1}`],
+    ['btn-density', 'density',    lvl => `&#127807; More Grass Lv${lvl+1}`],
+  ];
+
+  for (const [btnId, id, label] of defs) {
+    const cost = getUpgradeCost(id);
+    const lvl  = upgrades[id].level;
+    const btn  = document.getElementById(btnId);
+    btn.innerHTML  = `${label(lvl)} (${cost})`;
+    btn.disabled   = gemCount < cost;
+    if (lvl > 0) btn.classList.add('leveled');
+  }
+}
+
+// ── Main loop ───────────────────────────────────────────────────────────────
+function loop() {
+  update();
+
+  drawGround();
+  for (const g of grasses) drawGrass(g);
+  drawGems();
+  drawPlayer();
+  drawParticles();
+  drawFloats();
+
+  updateUI();
+  requestAnimationFrame(loop);
+}
+
+initGrass();
+loop();
+</script>
+</body>
+</html>
