@@ -62,6 +62,7 @@ export const transition = {
   duration: 40,
   toRX: 0, toRY: 0,
   oldGrasses: [],
+  oldRocks: [],
   // camera offset at moment transition started (for old screen draw)
   oldCamX: 0, oldCamY: 0,
   playerEntryX: 0, playerEntryY: 0,
@@ -115,6 +116,7 @@ export function triggerTransition(dir, oldGrassesSnapshot) {
   transition.toRX      = nb[0];
   transition.toRY      = nb[1];
   transition.oldGrasses = oldGrassesSnapshot;
+  transition.oldRocks  = getRockTiles(roomX, roomY);
   transition.oldCamX   = camera.x;
   transition.oldCamY   = camera.y;
   return true;
@@ -126,6 +128,7 @@ export function advanceTransition() {
   if (transition.frame >= transition.duration) {
     transition.active     = false;
     transition.oldGrasses = [];
+    transition.oldRocks   = [];
   }
 }
 

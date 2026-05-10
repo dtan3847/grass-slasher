@@ -3,7 +3,7 @@ import { player, SLASH_ARCS, snapCardinal } from './player.js';
 import { grasses } from './grass.js';
 import { gems } from './gems.js';
 import { upgrades } from './upgrades.js';
-import { transition, camera } from './world.js';
+import { transition, camera, getRockTiles } from './world.js';
 
 export const particles = [];
 export const floats    = [];
@@ -108,23 +108,41 @@ export function drawShrub(g, scale) {
   ctx.fill();
 }
 
+const ROCK_PTS = [
+  [ 0, -12], [ 8, -9], [13, -3], [11,  7],
+  [ 4, 12], [-6, 11], [-13,  5], [-12, -4], [-6, -11]
+];
+
+const ROCK_HI_PTS = [
+  [ 0, -12], [ 8, -9], [13, -3], [-2, -6]
+];
+
 export function drawRocks(rocks) {
   for (const r of rocks) {
     const cx = r.x, cy = r.y;
-    // Shadow arc bottom-right
     ctx.fillStyle = '#555';
     ctx.beginPath();
-    ctx.ellipse(cx + 1, cy + 2, 13, 11, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx + ROCK_PTS[0][0] + 1, cy + ROCK_PTS[0][1] + 2);
+    for (let i = 1; i < ROCK_PTS.length; i++) {
+      ctx.lineTo(cx + ROCK_PTS[i][0] + 1, cy + ROCK_PTS[i][1] + 2);
+    }
+    ctx.closePath();
     ctx.fill();
-    // Boulder body
-    ctx.fillStyle = '#7a7a7a';
+    ctx.fillStyle = '#888';
     ctx.beginPath();
-    ctx.ellipse(cx, cy, 13, 11, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx + ROCK_PTS[0][0], cy + ROCK_PTS[0][1]);
+    for (let i = 1; i < ROCK_PTS.length; i++) {
+      ctx.lineTo(cx + ROCK_PTS[i][0], cy + ROCK_PTS[i][1]);
+    }
+    ctx.closePath();
     ctx.fill();
-    // Highlight top-left
     ctx.fillStyle = '#aaa';
     ctx.beginPath();
-    ctx.ellipse(cx - 4, cy - 3, 5, 4, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx + ROCK_HI_PTS[0][0], cy + ROCK_HI_PTS[0][1]);
+    for (let i = 1; i < ROCK_HI_PTS.length; i++) {
+      ctx.lineTo(cx + ROCK_HI_PTS[i][0], cy + ROCK_HI_PTS[i][1]);
+    }
+    ctx.closePath();
     ctx.fill();
   }
 }
@@ -287,6 +305,7 @@ export function drawTransition() {
   ctx.save();
   ctx.translate(ox - transition.oldCamX, oy - transition.oldCamY);
   drawGround();
+  drawRocks(transition.oldRocks);
   for (const g of transition.oldGrasses) drawGrass(g);
   drawGems();
   ctx.restore();
@@ -295,6 +314,7 @@ export function drawTransition() {
   ctx.save();
   ctx.translate(nx - camera.x, ny - camera.y);
   drawGround();
+  drawRocks(getRockTiles(transition.toRX, transition.toRY));
   for (const g of grasses) drawGrass(g);
   drawPlayer(transition.playerEntryX, transition.playerEntryY);
   ctx.restore();
