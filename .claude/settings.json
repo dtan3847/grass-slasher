@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Edit",
-      "Write"
+      "Write",
+      "PowerShell(npm run build --prefix \"E:\\Claude-work\\grass-slasher\")"
     ]
   }
 }

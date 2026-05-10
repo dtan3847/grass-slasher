@@ -1,0 +1,255 @@
+import { canvas, W, H } from './constants.js';
+import { player, SLASH_ARCS, slashQueued, setSlashQueued, slashCount, trySlash, startSweep, startRetract, snapCardinal } from './player.js';
+import { grasses, initGrass, checkSlashHits } from './grass.js';
+import { gemCount, addGems, updateGems } from './gems.js';
+import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawParticles, drawFloats, updateParticles, drawDebug, drawDebugButton } from './render.js';
+
+window.buyUpgrade = buyUpgrade;
+window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
+
+let debugMode = false;
+let debugLog  = [];
+let slashRecords = [];
+let currentSlashRecord = null;
+let frameCount = 0;
+let autoSlashEnabled = true;
+let grassSpawnEnabled = true;
+
+const keys = {};
+
+function blockedAt(nx, ny) {
+  const halfSum = 7 + 11;
+  for (const g of grasses) {
+    if (!g.alive) continue;
+    if (Math.abs(g.x - nx) < halfSum && Math.abs(g.y - ny) < halfSum) return true;
+  }
+  return false;
+}
+
+function update() {
+  frameCount++;
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
+  if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
+  if (keys['ArrowUp']    || keys['KeyW']) dy -= 1;
+  if (keys['ArrowDown']  || keys['KeyS']) dy += 1;
+
+  if (dx !== 0 || dy !== 0) {
+    const len = Math.hypot(dx, dy);
+    const newFacing = Math.atan2(dy, dx);
+    if (newFacing !== player.facing) player.prevFacing = player.facing;
+    player.facing = newFacing;
+    if (dx > 0) player.lastHorizDir = 1;
+    else if (dx < 0) player.lastHorizDir = -1;
+    const stepX = (dx / len) * player.speed;
+    const stepY = (dy / len) * player.speed;
+    const nx = Math.max(14, Math.min(W - 14, player.x + stepX));
+    const ny = Math.max(14, Math.min(H - 14, player.y + stepY));
+    if (!blockedAt(nx, player.y)) player.x = nx;
+    if (!blockedAt(player.x, ny)) player.y = ny;
+  }
+
+  if (player.slashState === 'sweeping') {
+    const arc = SLASH_ARCS[player.slashCardinal];
+    const t = 1 - player.slashTimer / player.sweepDur;
+    const currentAngle = arc.start + t * arc.delta;
+
+    // open record on first frame of this sweep
+    if (debugMode && player.slashTimer === player.sweepDur) {
+      currentSlashRecord = {
+        slashN: slashRecords.length,
+        frame: frameCount,
+        playerX: Math.round(player.x), playerY: Math.round(player.y),
+        cardinal: player.slashCardinal,
+        slashRange: player.slashRange,
+        arcStart: +arc.start.toFixed(3), arcDelta: +arc.delta.toFixed(3),
+        grassSnapshot: grasses
+          .filter(g => g.alive)
+          .map(g => ({ x: Math.round(g.x), y: Math.round(g.y) })),
+        frames: [],
+      };
+    }
+
+    let frameRecord = null;
+    if (debugMode && currentSlashRecord) {
+      frameRecord = { frame: frameCount, t: +t.toFixed(3), currentAngle: +currentAngle.toFixed(3), grasses: [] };
+    }
+    checkSlashHits(currentAngle, frameRecord);
+    if (frameRecord) currentSlashRecord.frames.push(frameRecord);
+  }
+
+  if (player.slashTimer > 0) {
+    player.slashTimer--;
+    if (player.slashTimer === 0) {
+      if (player.slashState === 'sweeping') {
+        const arc = SLASH_ARCS[player.slashCardinal];
+        let finalFrame = null;
+        if (debugMode && currentSlashRecord) {
+          finalFrame = { frame: frameCount, t: 1.0, currentAngle: +(arc.start + arc.delta).toFixed(3), grasses: [] };
+        }
+        checkSlashHits(arc.start + arc.delta, finalFrame);
+        if (debugMode && currentSlashRecord) {
+          if (finalFrame) currentSlashRecord.frames.push(finalFrame);
+          slashRecords.push(currentSlashRecord);
+          debugLog.push({ type: 'slash', ...currentSlashRecord });
+          currentSlashRecord = null;
+        }
+        if (slashQueued) {
+          setSlashQueued(false);
+          startSweep(snapCardinal(player.facing));
+        } else {
+          startRetract();
+        }
+      } else if (player.slashState === 'retracting') {
+        player.slashState = 'idle';
+      }
+    }
+  }
+
+  if (player.autoSlashCooldown > 0) player.autoSlashCooldown--;
+  if (autoSlashEnabled && upgrades.autoSlash.level > 0 && player.slashState === 'idle' && player.autoSlashCooldown <= 0) {
+    let nearest = null, nearDist = Infinity;
+    const range = player.slashRange * 0.95;
+    for (const g of grasses) {
+      if (!g.alive) continue;
+      const d = Math.hypot(g.x - player.x, g.y - player.y);
+      if (d < range && d < nearDist) { nearDist = d; nearest = g; }
+    }
+    if (nearest) {
+      player.facing = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+      player.autoSlashCooldown = Math.max(10, 46 - upgrades.autoSlash.level * 10);
+      trySlash();
+    }
+  }
+
+  for (const g of grasses) {
+    if (!g.alive) {
+      if (g.cutAnim > 0) g.cutAnim -= 0.05;
+      if (grassSpawnEnabled) {
+        g.respawnTimer--;
+        if (g.respawnTimer <= 0) {
+          if (Math.hypot(player.x - g.x, player.y - g.y) < 18) {
+            g.respawnTimer = 10;
+          } else {
+            g.alive = true;
+          }
+        }
+      }
+    }
+  }
+
+  updateParticles();
+  updateGems(Math.max(1, Math.floor(Math.pow(1.5, upgrades.gemMult.level))));
+}
+
+function updateUI() {
+  document.getElementById('gem-count').textContent = gemCount;
+  document.getElementById('slash-count').textContent = slashCount;
+  document.getElementById('grass-count').textContent = grasses.filter(g => g.alive).length;
+
+  const defs = [
+    ['btn-gems',     'gemMult',    lvl => `&#128142; +Yield Lv${lvl+1}`,      null],
+    ['btn-range',    'slashRange', lvl => `&#128207; Sword Size Lv${lvl+1}`,  null],
+    ['btn-auto',     'autoSlash',  lvl => `&#129302; Auto-Slash Lv${lvl+1}`,  null],
+    ['btn-density',  'density',    lvl => `&#127807; More Grass Lv${lvl+1}`,  null],
+    ['btn-gemtier',   'gemTier',    lvl => `&#128081; Gem Tier Lv${lvl+1}`,    3],
+    ['btn-movespeed', 'moveSpeed',  lvl => `&#128070; Move Speed Lv${lvl+1}`,  5],
+  ];
+
+  for (const [btnId, id, label, maxLevel] of defs) {
+    const cost = getUpgradeCost(id);
+    const lvl  = upgrades[id].level;
+    const btn  = document.getElementById(btnId);
+    if (maxLevel !== null && lvl >= maxLevel) {
+      btn.innerHTML = `${label(lvl - 1).replace(/Lv\d+/, 'MAX')}`;
+      btn.disabled  = true;
+    } else {
+      btn.innerHTML = `${label(lvl)} (${cost})`;
+      btn.disabled  = gemCount < cost;
+    }
+    if (lvl > 0) btn.classList.add('leveled');
+  }
+
+  const toggleBtn = document.getElementById('btn-autoslash-toggle');
+  if (toggleBtn) {
+    toggleBtn.textContent = autoSlashEnabled ? 'Auto-slash: ON' : 'Auto-slash: OFF';
+    toggleBtn.classList.toggle('autoslash-on',  autoSlashEnabled);
+    toggleBtn.classList.toggle('autoslash-off', !autoSlashEnabled);
+  }
+}
+
+function loop() {
+  update();
+  drawGround();
+  for (const g of grasses) drawGrass(g);
+  drawGems();
+  drawPlayer();
+  drawParticles();
+  drawFloats();
+  drawDebug(debugMode, frameCount);
+  drawDebugButton(debugMode, grassSpawnEnabled);
+  updateUI();
+  requestAnimationFrame(loop);
+}
+
+function logSlash() {
+  if (!debugMode) return;
+  debugLog.push({
+    frame:        frameCount,
+    facing:       player.facing,
+    facingDeg:    Math.round(player.facing * 180 / Math.PI),
+    snapResult:   snapCardinal(player.facing),
+    prevFacing:   player.prevFacing,
+    prevFacingDeg: Math.round(player.prevFacing * 180 / Math.PI),
+    slashState:   player.slashState,
+  });
+}
+
+function downloadLog() {
+  const blob = new Blob([JSON.stringify(debugLog, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'slash-log.json';
+  a.click();
+}
+
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Backquote') {
+    debugMode = !debugMode;
+    return;
+  }
+  if (e.code === 'KeyM' && debugMode) {
+    addGems(100);
+    return;
+  }
+  if ((e.code === 'Space' || e.code === 'KeyZ') && !e.repeat) {
+    e.preventDefault();
+    trySlash();
+    logSlash();
+  }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top)  * (H / rect.height);
+
+  if (debugMode && mx >= W - 130 && mx <= W - 10 && my >= H - 70 && my <= H - 42) {
+    grassSpawnEnabled = !grassSpawnEnabled;
+    return;
+  }
+  if (debugMode && mx >= W - 130 && mx <= W - 10 && my >= H - 36 && my <= H - 8) {
+    downloadLog();
+    return;
+  }
+
+  player.facing = Math.atan2(my - player.y, mx - player.x);
+  trySlash();
+  logSlash();
+});
+
+initGrass();
+loop();

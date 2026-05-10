@@ -1,0 +1,30 @@
+# Grass Slasher — Completed Items
+
+- [x] tile-based hitbox
+- [x] arc sweep cardinal→cardinal
+- [x] retract cancellable by new slash
+- [x] grid-aligned shrub grass
+- [x] player sprite shrunk to 32×32
+- [x] fix auto-slasher idle-frame loop — added `autoSlashCooldown`, scales 36f→10f with level
+- [x] rename slashRange → "Sword Size"
+- [x] repeatable upgrades feel flat — rupeeMult yield now compounds `floor(1.5^level)`
+- [x] physical gem drops — `gems[]` array, pop physics + bounds bounce, pickup on overlap (14px), 30s lifetime with end-of-life blink, no auto-rupee on cut
+- [x] allow turning/moving while slashing — removed `slashState === 'idle'` gate around movement; arc still locks to `slashCardinal` at swing start, `player.facing` updates from WASD mid-swing → next queued slash chains in new direction
+- [x] [refactor] modular split — see `tasks/refactor-modular.md`.
+- [x] [bug] slash misses grass until player moves — player spawned at exact tile boundary; fixed by centering spawn at tile center.
+- [x] [bug] gem physics wrong for top-down — removed gravity and y-bias; radial 2D spread + friction only.
+- [x] [bug] player gets stuck in respawned grass — defer respawn 10 frames if player within 18px.
+- [x] [bug] slashRange upgrade purely visual — checkSlashHits now extends tile ring at Lv2+.
+- [x] [bug] SE arc shown instead of SW arc — SLASH_ARCS[1] never mutated in startSweep.
+- [x] [bug] SW slash never fires — lastHorizDir added to player; startSweep uses it instead of Math.cos check.
+- [x] [ux] debug overlay + log — backtick toggle; overlay shows facing/cardinal/slashState/tiles; download log button.
+- [x] [feature] gem tiers + drop upgrade — 4 tiers (green/blue/yellow/red, 1/5/10/20); gemTier upgrade shifts probabilities.
+- [x] [feature] gem yield as pickup multiplier — gemMult applied at pickup, not spawn; formula: baseValue * floor(1.5^level).
+- [x] [feature] movement speed upgrade — moveSpeed upgrade; base 2.8 + 0.4/level, max Lv5.
+- [x] [bug] slash hitbox misses grass on diagonal swings — replaced SLASH_TILES lookup with arc-geometry test in checkSlashHits; distance scales with slashRange upgrade.
+- [x] [ux] forgiving slash hitbox — expanded distance test to reach + TILE/2; arc angle bounds expanded by atan2(TILE/2, dist) per grass.
+- [x] [bug] slash hitbox misses grass on left/down due to angle wraparound + single-shot check — wraparound-safe angle check (normalize d to [-π,π]); moved checkSlashHits into game loop, fires every sweep frame.
+- [x] [feature] debug money cheat — M key in debug mode adds 100 gems.
+- [x] [feature] slash debug recorder — per-frame sweep data logged to debugLog when debug active; exported via Download Log button.
+- [x] [ux] auto-slash disable toggle — toggle button in shop panel; `autoSlashEnabled` bool gates auto-slash fire.
+- [x] [bug] sword visual and debug arc don't match hitbox — sword visual used `TILE + level*10`, divergent from slashRange formula; debug arc drawn at `slashRange + 13` (grass-sprite-radius buffer). Fixed in src/render.js: swordLen = `player.slashRange - 9` (sweeping + retracting branches), debug arc radius = `player.slashRange`. Sword tip + arc edge now coincide at all levels.

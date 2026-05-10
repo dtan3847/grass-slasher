@@ -1,0 +1,250 @@
+import { ctx, W, H, TILE } from './constants.js';
+import { player, SLASH_ARCS, snapCardinal } from './player.js';
+import { grasses } from './grass.js';
+import { gems } from './gems.js';
+import { upgrades } from './upgrades.js';
+
+export const particles = [];
+export const floats    = [];
+
+export function addCutParticles(x, y, hue) {
+  for (let i = 0; i < 7; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 1.2 + Math.random() * 2.5;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s - 1,
+      life: 22 + Math.random() * 18,
+      maxLife: 40,
+      hue,
+      size: 2 + Math.random() * 3,
+    });
+  }
+}
+
+export function addFloat(x, y, amount) {
+  floats.push({ x: x - 8, y: y - 10, vy: -0.9, life: 55, amount });
+}
+
+export function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  for (let i = floats.length - 1; i >= 0; i--) {
+    const f = floats[i];
+    f.y += f.vy; f.life--;
+    if (f.life <= 0) floats.splice(i, 1);
+  }
+}
+
+export function drawGround() {
+  ctx.fillStyle = '#3a5e20';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  const patches = [
+    [80,  60,  120, 90],
+    [320, 200, 100, 80],
+    [500, 350, 130, 70],
+    [150, 380, 90,  60],
+    [440, 80,  110, 75],
+  ];
+  for (const [x, y, w, h] of patches) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+  ctx.lineWidth   = 0.5;
+  for (let x = 0; x <= W; x += 32) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y <= H; y += 32) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+export function drawGrass(g) {
+  if (!g.alive) {
+    const prog = 1 - g.respawnTimer / g.respawnTime;
+    if (prog > 0.7) {
+      ctx.globalAlpha = (prog - 0.7) / 0.3 * 0.85;
+      drawShrub(g, 0.55);
+      ctx.globalAlpha = 1;
+    }
+    return;
+  }
+  drawShrub(g, 1);
+}
+
+export function drawShrub(g, scale) {
+  const cx = g.x, cy = g.y, h = g.hue;
+  const dark = `hsl(${h}, 60%, 18%)`;
+  const mid  = `hsl(${h}, 62%, 34%)`;
+  const lite = `hsl(${h + 10}, 70%, 55%)`;
+  const phase = g.flip ? Math.PI / 9 : 0;
+  const spikes = 9;
+  const outerR = 13 * scale;
+  const innerR = 7  * scale;
+  function spikePath(grow) {
+    ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+      const r = (i % 2 === 0 ? outerR : innerR) + grow;
+      const a = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2 + phase;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+  ctx.fillStyle = dark; spikePath(1.5); ctx.fill();
+  ctx.fillStyle = mid;  spikePath(0);   ctx.fill();
+  ctx.fillStyle = lite;
+  ctx.beginPath();
+  ctx.arc(cx - 3 * scale, cy - 4 * scale, 2.5 * scale, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+export function drawPlayer() {
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(0, 14, 9, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#2d6b2d';
+  ctx.beginPath();
+  ctx.moveTo(-7, -10); ctx.lineTo( 7, -10); ctx.lineTo( 0, -16);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e8c46a';
+  ctx.fillRect(-6, -10, 12, 8);
+  ctx.fillStyle = '#3d8b3d';
+  ctx.fillRect(-7, -2, 14, 14);
+  ctx.fillStyle = '#2d6b2d';
+  ctx.fillRect(-7, 10, 14, 2);
+  ctx.fillStyle = '#222';
+  const ex = Math.cos(player.facing) * 2;
+  ctx.fillRect(-3 + ex, -7, 2, 2);
+  ctx.fillRect( 1 + ex, -7, 2, 2);
+  if (player.slashState !== 'idle') {
+    const arc = SLASH_ARCS[player.slashCardinal];
+    let angle, swordLen;
+    if (player.slashState === 'sweeping') {
+      const t = 1 - player.slashTimer / player.sweepDur;
+      angle    = arc.start + t * arc.delta;
+      swordLen = player.slashRange - 9;
+    } else {
+      angle    = arc.start + arc.delta;
+      const t  = player.slashTimer / player.retractDur;
+      swordLen = (player.slashRange - 9) * t;
+    }
+    if (swordLen > 1) {
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.fillStyle = 'rgba(220, 235, 255, 0.92)';
+      ctx.fillRect(9, -3, swordLen, 6);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fillRect(9, -3, swordLen, 2);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+export function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = (p.life / p.maxLife) * 0.9;
+    ctx.fillStyle   = `hsl(${p.hue},70%,55%)`;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+export function drawFloats() {
+  ctx.font = 'bold 12px monospace';
+  for (const f of floats) {
+    ctx.globalAlpha = Math.min(1, f.life / 30);
+    ctx.fillStyle   = '#7fff60';
+    ctx.fillText(`+${f.amount}`, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+const GEM_FILL   = ['#22c860', '#3090ff', '#ffe030', '#ff3030'];
+const GEM_STROKE = ['#0a4020', '#003880', '#806000', '#800000'];
+
+export function drawGems() {
+  for (const gm of gems) {
+    const yOff = gm.rest ? Math.sin(gm.bob) * 1.2 : 0;
+    const blink = gm.life < 240 && (Math.floor(gm.life / 8) % 2 === 0);
+    if (blink) continue;
+    const tier = gm.tier ?? 0;
+    ctx.save();
+    ctx.translate(gm.x, gm.y + yOff);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, 6 - yOff, 4, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = GEM_FILL[tier];
+    ctx.beginPath();
+    ctx.moveTo(0, -6); ctx.lineTo(4, 0); ctx.lineTo(0, 6); ctx.lineTo(-4, 0);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = GEM_STROKE[tier];
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(-2, -1); ctx.lineTo(0, -3); ctx.lineTo(0, 1);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
+
+const CARDINAL_NAMES = ['right', 'down', 'left', 'up'];
+
+export function drawDebug(enabled, frame) {
+  if (!enabled) return;
+
+  const sc = snapCardinal(player.facing);
+  const facingDeg = Math.round(player.facing * 180 / Math.PI);
+  const prevDeg   = Math.round(player.prevFacing * 180 / Math.PI);
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(4, 4, 220, 145);
+
+  ctx.font      = '12px monospace';
+  ctx.fillStyle = '#fff';
+  const lines = [
+    `frame: ${frame}`,
+    `facing: ${facingDeg}° (raw: ${player.facing.toFixed(2)})`,
+    `prevFacing: ${prevDeg}°`,
+    `lastHorizDir: ${player.lastHorizDir}`,
+    `snapCardinal: ${sc} (${CARDINAL_NAMES[sc]})`,
+    `slashState: ${player.slashState}`,
+    `slashCardinal: ${player.slashCardinal}`,
+    `slashRange: ${player.slashRange}px`,
+  ];
+  lines.forEach((line, i) => ctx.fillText(line, 10, 22 + i * 16));
+
+  const arc = SLASH_ARCS[player.slashCardinal];
+  ctx.beginPath();
+  ctx.moveTo(player.x, player.y);
+  ctx.arc(player.x, player.y, player.slashRange, arc.start, arc.start + arc.delta, arc.delta < 0);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,0,0,0.25)';
+  ctx.fill();
+}
+
+export function drawDebugButton(enabled, grassSpawnEnabled) {
+  if (!enabled) return;
+  ctx.fillStyle = grassSpawnEnabled ? 'rgba(40,80,40,0.9)' : 'rgba(80,40,40,0.9)';
+  ctx.fillRect(W - 130, H - 70, 120, 28);
+  ctx.font      = '12px monospace';
+  ctx.fillStyle = '#fff';
+  ctx.fillText(grassSpawnEnabled ? 'Grass: ON' : 'Grass: OFF', W - 122, H - 51);
+  ctx.fillStyle = 'rgba(40,40,40,0.9)';
+  ctx.fillRect(W - 130, H - 36, 120, 28);
+  ctx.fillStyle = '#fff';
+  ctx.fillText('Download Log', W - 122, H - 17);
+}

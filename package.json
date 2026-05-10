@@ -1,0 +1,11 @@
+{
+  "name": "grass-slasher",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npx esbuild src/main.js --bundle --outfile=bundle.js --watch",
+    "build": "npx esbuild src/main.js --bundle --outfile=bundle.js"
+  },
+  "devDependencies": {
+    "esbuild": "latest"
+  }
+}
