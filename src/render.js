@@ -109,20 +109,24 @@ export function drawShrub(g, scale) {
 }
 
 export function drawRocks(rocks) {
-  ctx.fillStyle = '#888';
-  ctx.strokeStyle = '#555';
-  ctx.lineWidth = 1;
   for (const r of rocks) {
-    const tx = r.x - 16, ty = r.y - 16;
-    ctx.fillRect(tx, ty, 32, 32);
-    ctx.strokeRect(tx + 0.5, ty + 0.5, 31, 31);
+    const cx = r.x, cy = r.y;
+    // Shadow arc bottom-right
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.ellipse(cx + 1, cy + 2, 13, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Boulder body
+    ctx.fillStyle = '#7a7a7a';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, 13, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Highlight top-left
     ctx.fillStyle = '#aaa';
-    ctx.fillRect(tx + 3, ty + 3, 10, 6);
-    ctx.fillRect(tx + 17, ty + 18, 8, 5);
-    ctx.fillStyle = '#888';
+    ctx.beginPath();
+    ctx.ellipse(cx - 4, cy - 3, 5, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 1;
 }
 
 export function drawPlayer(px = player.x, py = player.y) {

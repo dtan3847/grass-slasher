@@ -85,25 +85,21 @@ export function getRockTiles(rx, ry) {
   const tiles = [];
   if (adj.left === null) {
     for (let r = 0; r < 15; r++) {
-      if (r === 7) continue;
       tiles.push({ x: 0 * 32 + 16, y: r * 32 + 16 });
     }
   }
   if (adj.right === null) {
     for (let r = 0; r < 15; r++) {
-      if (r === 7) continue;
       tiles.push({ x: 19 * 32 + 16, y: r * 32 + 16 });
     }
   }
   if (adj.up === null) {
     for (let c = 0; c < 20; c++) {
-      if (c === 9 || c === 10) continue;
       tiles.push({ x: c * 32 + 16, y: 0 * 32 + 16 });
     }
   }
   if (adj.down === null) {
     for (let c = 0; c < 20; c++) {
-      if (c === 9 || c === 10) continue;
       tiles.push({ x: c * 32 + 16, y: 14 * 32 + 16 });
     }
   }
