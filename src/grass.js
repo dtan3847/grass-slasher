@@ -3,6 +3,7 @@ import { player } from './player.js';
 import { upgrades } from './upgrades.js';
 import { spawnGem, TIER_WEIGHTS } from './gems.js';
 import { addCutParticles } from './render.js';
+import { getLayout } from './world.js';
 
 export const GRASS_BASE = 60;
 export const grasses = [];
@@ -38,9 +39,25 @@ export function spawnGrass() {
   return false;
 }
 
-export function initGrass() {
-  for (let i = 0; i < GRASS_BASE; i++) spawnGrass();
+export function loadRoom(rx, ry) {
+  grasses.length = 0;
+  occupiedCells.clear();
+  for (const { col, row } of getLayout(rx, ry)) {
+    const key = cellKey(col, row);
+    occupiedCells.add(key);
+    grasses.push({
+      x: col * TILE + TILE / 2,
+      y: row * TILE + TILE / 2,
+      alive: true,
+      respawnTimer: 0,
+      respawnTime: 300 + Math.random() * 180,
+      hue: 100 + Math.random() * 35,
+      flip: Math.random() < 0.5,
+    });
+  }
 }
+
+export function initGrass() { loadRoom(0, 2); }
 
 export function checkSlashHits(sweepAngle, recordTarget) {
   const reach = player.slashRange;

@@ -3,6 +3,7 @@ import { player } from './player.js';
 import { addFloat } from './render.js';
 
 export const gems = [];
+export function clearGems() { gems.length = 0; }
 export let gemCount = 0;
 
 export function addGems(n)   { gemCount += n; }

@@ -3,6 +3,7 @@ import { player, SLASH_ARCS, snapCardinal } from './player.js';
 import { grasses } from './grass.js';
 import { gems } from './gems.js';
 import { upgrades } from './upgrades.js';
+import { transition, camera } from './world.js';
 
 export const particles = [];
 export const floats    = [];
@@ -247,4 +248,31 @@ export function drawDebugButton(enabled, grassSpawnEnabled) {
   ctx.fillRect(W - 130, H - 36, 120, 28);
   ctx.fillStyle = '#fff';
   ctx.fillText('Download Log', W - 122, H - 17);
+}
+
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+export function drawTransition() {
+  const t = easeInOut(transition.frame / transition.duration);
+  let ox = 0, oy = 0, nx = 0, ny = 0;
+  switch (transition.direction) {
+    case 'right': ox = -W*t;    nx = W*(1-t);  break;
+    case 'left':  ox =  W*t;    nx = -W*(1-t); break;
+    case 'down':  oy = -H*t;    ny = H*(1-t);  break;
+    case 'up':    oy =  H*t;    ny = -H*(1-t); break;
+  }
+
+  // Old screen sliding out
+  ctx.save();
+  ctx.translate(ox - transition.oldCamX, oy - transition.oldCamY);
+  drawGround();
+  for (const g of transition.oldGrasses) drawGrass(g);
+  ctx.restore();
+
+  // New screen sliding in
+  ctx.save();
+  ctx.translate(nx - camera.x, ny - camera.y);
+  drawGround();
+  for (const g of grasses) drawGrass(g);
+  ctx.restore();
 }

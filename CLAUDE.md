@@ -25,12 +25,13 @@ For each code change:
 2. Spawn `grass-slasher-dev` via the Agent tool. Pass the item text verbatim plus any extra context the dev needs (numbers, behaviour, edge cases).
 3. Wait for the dev's return summary.
 4. Run `npm run build --prefix "E:\Claude-work\grass-slasher"` to rebuild `bundle.js` from updated `src/` files.
-5. Mark `[~]` in `TODO.md` and report to user. If build/logic broken: re-spawn with corrections.
-6. After user verifies in browser: move item to `DONE.md`, remove from `TODO.md`.
+5. Commit: one commit per TODO item. Use `/caveman-commit` to generate message. Stage all changed `src/` files and `bundle.js`.
+6. Mark `[~]` in `TODO.md` and report to user. If build/logic broken: re-spawn with corrections.
+7. After user verifies in browser: move item to `DONE.md`, remove from `TODO.md`. User pushes.
 
 **Grouping rules:** Bundle 2-3 simple tasks only if they touch the same code area and each has a clear diagnosis. Keep complex tasks solo. Never bundle unrelated features/areas — the dev is instructed to refuse scope creep and a bundled spawn wastes that signal. When in doubt: one task per spawn.
 
-The dev subagent is one-shot — it has no memory of prior spawns. Each spawn must contain everything the dev needs to do the job.
+The dev subagent is one-shot — it has no memory of prior spawns. Each spawn must contain everything the dev needs to do the job. One TODO item may require multiple sequential spawns if first attempt is incomplete.
 
 ### What the manager does NOT do
 

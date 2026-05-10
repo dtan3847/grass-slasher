@@ -1,9 +1,10 @@
-import { canvas, W, H } from './constants.js';
+import { canvas, ctx, W, H } from './constants.js';
 import { player, SLASH_ARCS, slashQueued, setSlashQueued, slashCount, trySlash, startSweep, startRetract, snapCardinal } from './player.js';
-import { grasses, initGrass, checkSlashHits } from './grass.js';
-import { gemCount, addGems, updateGems } from './gems.js';
+import { grasses, initGrass, checkSlashHits, loadRoom } from './grass.js';
+import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
-import { drawGround, drawGrass, drawGems, drawPlayer, drawParticles, drawFloats, updateParticles, drawDebug, drawDebugButton } from './render.js';
+import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize } from './world.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton } from './render.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
@@ -27,8 +28,69 @@ function blockedAt(nx, ny) {
   return false;
 }
 
+const EDGE = 14;
+
+function applyMovement(stepX, stepY) {
+  const room = getCurrentRoom();
+  const roomPxW = room.widthCells * W;
+  const roomPxH = room.heightCells * H;
+
+  const nx = player.x + stepX;
+  if (nx < EDGE) {
+    if (getNeighbor('left')) { startTransition('left'); return; }
+    else player.x = EDGE;
+  } else if (nx > roomPxW - EDGE) {
+    if (getNeighbor('right')) { startTransition('right'); return; }
+    else player.x = roomPxW - EDGE;
+  } else {
+    if (!blockedAt(nx, player.y)) player.x = nx;
+  }
+
+  const ny = player.y + stepY;
+  if (ny < EDGE) {
+    if (getNeighbor('up')) { startTransition('up'); return; }
+    else player.y = EDGE;
+  } else if (ny > roomPxH - EDGE) {
+    if (getNeighbor('down')) { startTransition('down'); return; }
+    else player.y = roomPxH - EDGE;
+  } else {
+    if (!blockedAt(player.x, ny)) player.y = ny;
+  }
+}
+
+function startTransition(dir) {
+  if (transition.active) return;
+  const snapshot = [...grasses];
+  if (!triggerTransition(dir, snapshot)) return;
+  loadRoom(transition.toRX, transition.toRY);
+}
+
+function repositionPlayer(dir) {
+  const { w: nw, h: nh } = getRoomPixelSize(transition.toRX, transition.toRY);
+  switch (dir) {
+    case 'up':    player.y = nh - EDGE - 1; break;
+    case 'down':  player.y = EDGE + 1;      break;
+    case 'left':  player.x = nw - EDGE - 1; break;
+    case 'right': player.x = EDGE + 1;      break;
+  }
+}
+
 function update() {
   frameCount++;
+
+  if (transition.active) {
+    if (transition.frame === transition.duration - 1) {
+      repositionPlayer(transition.direction);
+      clearGems();
+      commitTransition();
+    }
+    advanceTransition();
+    return;
+  }
+
+  const room = getCurrentRoom();
+  updateCamera(player.x, player.y, room.widthCells * W, room.heightCells * H);
+
   let dx = 0, dy = 0;
   if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
   if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
@@ -44,10 +106,7 @@ function update() {
     else if (dx < 0) player.lastHorizDir = -1;
     const stepX = (dx / len) * player.speed;
     const stepY = (dy / len) * player.speed;
-    const nx = Math.max(14, Math.min(W - 14, player.x + stepX));
-    const ny = Math.max(14, Math.min(H - 14, player.y + stepY));
-    if (!blockedAt(nx, player.y)) player.x = nx;
-    if (!blockedAt(player.x, ny)) player.y = ny;
+    applyMovement(stepX, stepY);
   }
 
   if (player.slashState === 'sweeping') {
@@ -181,14 +240,24 @@ function updateUI() {
 
 function loop() {
   update();
-  drawGround();
-  for (const g of grasses) drawGrass(g);
-  drawGems();
-  drawPlayer();
-  drawParticles();
-  drawFloats();
-  drawDebug(debugMode, frameCount);
-  drawDebugButton(debugMode, grassSpawnEnabled);
+  if (transition.active) {
+    drawTransition();
+    drawFloats();
+    drawDebug(debugMode, frameCount);
+    drawDebugButton(debugMode, grassSpawnEnabled);
+  } else {
+    drawGround();
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+    for (const g of grasses) drawGrass(g);
+    drawGems();
+    drawPlayer();
+    drawParticles();
+    drawFloats();
+    ctx.restore();
+    drawDebug(debugMode, frameCount);
+    drawDebugButton(debugMode, grassSpawnEnabled);
+  }
   updateUI();
   requestAnimationFrame(loop);
 }
