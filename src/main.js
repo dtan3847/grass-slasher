@@ -3,8 +3,8 @@ import { player, SLASH_ARCS, slashQueued, setSlashQueued, slashCount, trySlash, 
 import { grasses, initGrass, checkSlashHits, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
-import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize } from './world.js';
-import { drawGround, drawGrass, drawGems, drawPlayer, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton } from './render.js';
+import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY } from './world.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton } from './render.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
@@ -24,6 +24,10 @@ function blockedAt(nx, ny) {
   for (const g of grasses) {
     if (!g.alive) continue;
     if (Math.abs(g.x - nx) < halfSum && Math.abs(g.y - ny) < halfSum) return true;
+  }
+  const rocks = getRockTiles(roomX, roomY);
+  for (const r of rocks) {
+    if (Math.abs(r.x - nx) < halfSum && Math.abs(r.y - ny) < halfSum) return true;
   }
   return false;
 }
@@ -258,6 +262,7 @@ function loop() {
     drawGround();
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
+    drawRocks(getRockTiles(roomX, roomY));
     for (const g of grasses) drawGrass(g);
     drawGems();
     drawPlayer();

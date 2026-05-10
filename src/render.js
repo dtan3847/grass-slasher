@@ -108,6 +108,23 @@ export function drawShrub(g, scale) {
   ctx.fill();
 }
 
+export function drawRocks(rocks) {
+  ctx.fillStyle = '#888';
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 1;
+  for (const r of rocks) {
+    const tx = r.x - 16, ty = r.y - 16;
+    ctx.fillRect(tx, ty, 32, 32);
+    ctx.strokeRect(tx + 0.5, ty + 0.5, 31, 31);
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(tx + 3, ty + 3, 10, 6);
+    ctx.fillRect(tx + 17, ty + 18, 8, 5);
+    ctx.fillStyle = '#888';
+  }
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+}
+
 export function drawPlayer(px = player.x, py = player.y) {
   ctx.save();
   ctx.translate(px, py);
