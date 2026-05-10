@@ -29,3 +29,7 @@
 - [x] [ux] auto-slash disable toggle — toggle button in shop panel; `autoSlashEnabled` bool gates auto-slash fire.
 - [x] [bug] sword visual and debug arc don't match hitbox — sword visual used `TILE + level*10`, divergent from slashRange formula; debug arc drawn at `slashRange + 13` (grass-sprite-radius buffer). Fixed in src/render.js: swordLen = `player.slashRange - 9` (sweeping + retracting branches), debug arc radius = `player.slashRange`. Sword tip + arc edge now coincide at all levels.
 - [x] [feature] world system (phases 1–4) — 1×3 multi-room world (rooms 0,0/0,1/0,2); `src/world.js` with room layouts, adjacency map, camera, transition state machine; `loadRoom(rx,ry)` + `clearGems()` for room loading; `drawTransition()` slide animation; edge detection, `startTransition`/`repositionPlayer`/`commitTransition` wired in `src/main.js`. Grass respawn, gem despawn, and screen transitions all verified working.
+- [x] [bug] player starts in top room instead of bottom — initGrass() changed to loadRoom(0,2); world.js initial roomY=2.
+- [x] [bug] gems disappear at transition start instead of end — clearGems() moved from startTransition() to update() just before commitTransition().
+- [x] [bug] player and gems not rendered during transition slide — drawPlayer() given optional px/py params; drawTransition() now draws gems with old-room offset and player (at entry coords) with new-room offset.
+- [x] [feature] debug grass spawn toggle — grassSpawnEnabled bool in main.js gates spawnGrass(); toggle button in debug overlay.
