@@ -63,6 +63,15 @@ function startTransition(dir) {
   const snapshot = [...grasses];
   if (!triggerTransition(dir, snapshot)) return;
   loadRoom(transition.toRX, transition.toRY);
+  const { w: nw, h: nh } = getRoomPixelSize(transition.toRX, transition.toRY);
+  transition.playerEntryX = player.x;
+  transition.playerEntryY = player.y;
+  switch (dir) {
+    case 'up':    transition.playerEntryY = nh - EDGE - 1; break;
+    case 'down':  transition.playerEntryY = EDGE + 1;      break;
+    case 'left':  transition.playerEntryX = nw - EDGE - 1; break;
+    case 'right': transition.playerEntryX = EDGE + 1;      break;
+  }
 }
 
 function repositionPlayer(dir) {

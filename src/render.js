@@ -108,9 +108,9 @@ export function drawShrub(g, scale) {
   ctx.fill();
 }
 
-export function drawPlayer() {
+export function drawPlayer(px = player.x, py = player.y) {
   ctx.save();
-  ctx.translate(player.x, player.y);
+  ctx.translate(px, py);
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.beginPath();
   ctx.ellipse(0, 14, 9, 3, 0, 0, Math.PI * 2);
@@ -267,6 +267,7 @@ export function drawTransition() {
   ctx.translate(ox - transition.oldCamX, oy - transition.oldCamY);
   drawGround();
   for (const g of transition.oldGrasses) drawGrass(g);
+  drawGems();
   ctx.restore();
 
   // New screen sliding in
@@ -274,5 +275,6 @@ export function drawTransition() {
   ctx.translate(nx - camera.x, ny - camera.y);
   drawGround();
   for (const g of grasses) drawGrass(g);
+  drawPlayer(transition.playerEntryX, transition.playerEntryY);
   ctx.restore();
 }

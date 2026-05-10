@@ -64,6 +64,7 @@ export const transition = {
   oldGrasses: [],
   // camera offset at moment transition started (for old screen draw)
   oldCamX: 0, oldCamY: 0,
+  playerEntryX: 0, playerEntryY: 0,
 };
 
 export function getCurrentRoom() { return ROOMS[`${roomX},${roomY}`]; }
