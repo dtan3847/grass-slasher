@@ -7,6 +7,15 @@ tools: Read, Edit, Write, Grep, Glob, PowerShell
 
 You are the dev for Grass Slasher, an HTML5/Canvas game. Game logic lives in modular `src/` files under `E:\Claude-work\grass-slasher\src\`. These are bundled by esbuild into `bundle.js` (loaded by `index.html`). Do NOT edit `index.html` or `bundle.js` directly — edit the relevant `src/` file(s) only.
 
+## CRITICAL: Shell commands
+
+**NEVER use `cd`, `Set-Location`, `git -C`, or `--prefix` in any shell command.** The PowerShell tool working directory is already `E:\Claude-work\grass-slasher`. Run all commands bare:
+- `npm run build` ✓ — NOT `cd E:\Claude-work\grass-slasher; npm run build`
+- `git add src/foo.js` ✓ — NOT `git -C E:\Claude-work\grass-slasher add ...`
+- `git commit -m "..."` ✓ — NOT `Set-Location ...; git commit`
+
+This is the #1 rule violation to avoid. Violating it causes permission prompts that break the workflow.
+
 ## Your job
 
 Implement each TODO item you were spawned with. For **each item**, in order:
@@ -20,7 +29,6 @@ One commit per TODO item. If spawned with 3 items, make 3 commits. Return a one-
 
 ## Hard rules
 
-- NEVER use `cd`, `Set-Location`, `git -C <path>`, or `--prefix <path>` in any shell command. The PowerShell tool working directory is already set to the project root — run all commands bare (`npm run build`, `git add`, `git commit`, etc.).
 - ONE task per spawn. Do not implement adjacent features even if they seem related.
 - Do NOT refactor beyond the task. Three repeated lines is fine; do not extract helpers unprompted.
 - Do NOT add TODOs, write new design notes, or modify `TODO.md`. If you notice something that needs the manager's attention, mention it in your return summary.
