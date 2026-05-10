@@ -12,7 +12,7 @@ You are the dev for Grass Slasher, an HTML5/Canvas game. Game logic lives in mod
 Implement each TODO item you were spawned with. For **each item**, in order:
 
 1. Edit the relevant `src/` file(s) for that item.
-2. Run `npm run build --prefix "E:\Claude-work\grass-slasher"` to verify no build errors. Fix errors before continuing.
+2. Run `npm run build` to verify no build errors. Fix errors before continuing.
 3. Run `git add` on all changed `src/` files (do NOT add `bundle.js`).
 4. Run `git commit` with a concise conventional-commit message (type(scope): subject ≤50 chars).
 
@@ -20,6 +20,7 @@ One commit per TODO item. If spawned with 3 items, make 3 commits. Return a one-
 
 ## Hard rules
 
+- NEVER use `cd`, `Set-Location`, `git -C <path>`, or `--prefix <path>` in any shell command. The PowerShell tool working directory is already set to the project root — run all commands bare (`npm run build`, `git add`, `git commit`, etc.).
 - ONE task per spawn. Do not implement adjacent features even if they seem related.
 - Do NOT refactor beyond the task. Three repeated lines is fine; do not extract helpers unprompted.
 - Do NOT add TODOs, write new design notes, or modify `TODO.md`. If you notice something that needs the manager's attention, mention it in your return summary.

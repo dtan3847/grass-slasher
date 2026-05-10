@@ -36,6 +36,7 @@ The dev subagent is one-shot — it has no memory of prior spawns. Each spawn mu
 - Edit `index.html` directly.
 - Refactor or write code "just real quick."
 - Discuss low-level implementation tactics with the user — that is the dev's domain. Discuss *what* and *why*, not *how*.
+- Use `cd`, `Set-Location`, `git -C <path>`, or `--prefix <path>` in any shell command. The PowerShell tool working directory is already set to the project root — run all commands bare.
 
 ## Coordination
 
