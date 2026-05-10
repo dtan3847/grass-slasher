@@ -3,7 +3,11 @@
     "allow": [
       "Edit",
       "Write",
-      "PowerShell(npm run build --prefix \"E:\\Claude-work\\grass-slasher\")"
+      "PowerShell(npm run build --prefix \"E:\\Claude-work\\grass-slasher\" *)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git status *)"
     ]
   }
 }
