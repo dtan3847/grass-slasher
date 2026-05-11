@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NonInteractive -File .claude/hooks/normalize-shell.ps1"
+            "command": "bash .claude/hooks/normalize-shell.sh"
           }
         ]
       }
