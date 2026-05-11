@@ -113,22 +113,24 @@ function update() {
   const promptEl = document.getElementById('debt-prompt');
   if (promptEl) promptEl.style.display = (nearPaymentZone && !gameWon && !isDebtCleared()) ? 'block' : 'none';
 
-  let dx = 0, dy = 0;
-  if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
-  if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
-  if (keys['ArrowUp']    || keys['KeyW']) dy -= 1;
-  if (keys['ArrowDown']  || keys['KeyS']) dy += 1;
+  if (!gameWon) {
+    let dx = 0, dy = 0;
+    if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
+    if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
+    if (keys['ArrowUp']    || keys['KeyW']) dy -= 1;
+    if (keys['ArrowDown']  || keys['KeyS']) dy += 1;
 
-  if (dx !== 0 || dy !== 0) {
-    const len = Math.hypot(dx, dy);
-    const newFacing = Math.atan2(dy, dx);
-    if (newFacing !== player.facing) player.prevFacing = player.facing;
-    player.facing = newFacing;
-    if (dx > 0) player.lastHorizDir = 1;
-    else if (dx < 0) player.lastHorizDir = -1;
-    const stepX = (dx / len) * player.speed;
-    const stepY = (dy / len) * player.speed;
-    applyMovement(stepX, stepY);
+    if (dx !== 0 || dy !== 0) {
+      const len = Math.hypot(dx, dy);
+      const newFacing = Math.atan2(dy, dx);
+      if (newFacing !== player.facing) player.prevFacing = player.facing;
+      player.facing = newFacing;
+      if (dx > 0) player.lastHorizDir = 1;
+      else if (dx < 0) player.lastHorizDir = -1;
+      const stepX = (dx / len) * player.speed;
+      const stepY = (dy / len) * player.speed;
+      applyMovement(stepX, stepY);
+    }
   }
 
   if (player.slashState === 'sweeping') {
@@ -189,7 +191,7 @@ function update() {
   }
 
   if (player.autoSlashCooldown > 0) player.autoSlashCooldown--;
-  if (autoSlashEnabled && upgrades.autoSlash.level > 0 && player.slashState === 'idle' && player.autoSlashCooldown <= 0) {
+  if (!gameWon && autoSlashEnabled && upgrades.autoSlash.level > 0 && player.slashState === 'idle' && player.autoSlashCooldown <= 0) {
     let nearest = null, nearDist = Infinity;
     const range = player.slashRange * 0.95;
     for (const g of grasses) {
@@ -268,7 +270,6 @@ function loop() {
   if (transition.active) {
     drawTransition();
     drawFloats();
-    drawDebug(debugMode, frameCount);
     drawDebugButton(debugMode, grassSpawnEnabled);
   } else {
     drawGround();
@@ -282,10 +283,10 @@ function loop() {
     drawParticles();
     drawFloats();
     ctx.restore();
-    drawDebug(debugMode, frameCount);
     drawDebugButton(debugMode, grassSpawnEnabled);
   }
   drawWinScreen(gameWon);
+  drawDebug(debugMode, frameCount);
   updateUI();
   requestAnimationFrame(loop);
 }
@@ -326,7 +327,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'KeyE' && !e.repeat && player.slashState === 'idle') {
     const nearZone = roomX === PAYMENT_ZONE.rx && roomY === PAYMENT_ZONE.ry &&
       Math.hypot(player.x - PAYMENT_ZONE.px, player.y - PAYMENT_ZONE.py) <= PAYMENT_ZONE.radius;
-    if (nearZone && !gameWon) {
+    if (nearZone && !gameWon && !isDebtCleared()) {
       payDebt(gemCount);
       if (isDebtCleared()) gameWon = true;
     }

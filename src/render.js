@@ -267,10 +267,16 @@ export function drawDebug(enabled, frame) {
   ];
   lines.forEach((line, i) => ctx.fillText(line, 10, 22 + i * 16));
 
-  const arc = SLASH_ARCS[player.slashCardinal];
+  const arcCardinal = player.slashState === 'idle' ? snapCardinal(player.facing) : player.slashCardinal;
+  const arc = SLASH_ARCS[arcCardinal];
+  const px = transition.active ? transition.playerEntryX : player.x;
+  const py = transition.active ? transition.playerEntryY : player.y;
+  const halfWidth = Math.atan2(3, player.slashRange);
+  const arcStart = arc.delta >= 0 ? arc.start - halfWidth : arc.start + halfWidth;
+  const arcEnd   = arc.delta >= 0 ? arc.start + arc.delta + halfWidth : arc.start + arc.delta - halfWidth;
   ctx.beginPath();
-  ctx.moveTo(player.x, player.y);
-  ctx.arc(player.x, player.y, player.slashRange, arc.start, arc.start + arc.delta, arc.delta < 0);
+  ctx.moveTo(px, py);
+  ctx.arc(px, py, player.slashRange, arcStart, arcEnd, arc.delta < 0);
   ctx.closePath();
   ctx.fillStyle = 'rgba(255,0,0,0.25)';
   ctx.fill();
