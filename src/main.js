@@ -3,9 +3,9 @@ import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, 
 import { grasses, initGrass, checkSlashHits, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
-import { debtRemaining, DEBT_TOTAL } from './debt.js';
-import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY } from './world.js';
-import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro } from './render.js';
+import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
+import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY, PAYMENT_ZONE } from './world.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone } from './render.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
@@ -18,6 +18,7 @@ let currentSlashRecord = null;
 let frameCount = 0;
 let autoSlashEnabled = true;
 let grassSpawnEnabled = true;
+export let gameWon = false;
 
 const keys = {};
 
@@ -105,6 +106,12 @@ function update() {
 
   const room = getCurrentRoom();
   updateCamera(player.x, player.y, room.widthCells * W, room.heightCells * H);
+
+  const inPaymentRoom = roomX === PAYMENT_ZONE.rx && roomY === PAYMENT_ZONE.ry;
+  const nearPaymentZone = inPaymentRoom &&
+    Math.hypot(player.x - PAYMENT_ZONE.px, player.y - PAYMENT_ZONE.py) <= PAYMENT_ZONE.radius;
+  const promptEl = document.getElementById('debt-prompt');
+  if (promptEl) promptEl.style.display = (nearPaymentZone && !gameWon) ? 'block' : 'none';
 
   let dx = 0, dy = 0;
   if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
@@ -268,6 +275,7 @@ function loop() {
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
     drawRocks(getRockTiles(roomX, roomY));
+    if (roomX === PAYMENT_ZONE.rx && roomY === PAYMENT_ZONE.ry) drawPaymentZone(frameCount);
     for (const g of grasses) drawGrass(g);
     drawGems();
     drawPlayer();
@@ -311,6 +319,15 @@ document.addEventListener('keydown', e => {
   }
   if (e.code === 'KeyM' && debugMode) {
     addGems(100);
+    return;
+  }
+  if (e.code === 'KeyE' && !e.repeat && player.slashState === 'idle') {
+    const nearZone = roomX === PAYMENT_ZONE.rx && roomY === PAYMENT_ZONE.ry &&
+      Math.hypot(player.x - PAYMENT_ZONE.px, player.y - PAYMENT_ZONE.py) <= PAYMENT_ZONE.radius;
+    if (nearZone && !gameWon) {
+      payDebt(gemCount);
+      if (isDebtCleared()) gameWon = true;
+    }
     return;
   }
   if ((e.code === 'Space' || e.code === 'KeyZ') && !e.repeat) {

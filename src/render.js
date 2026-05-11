@@ -3,7 +3,7 @@ import { player, SLASH_ARCS, snapCardinal } from './player.js';
 import { grasses } from './grass.js';
 import { gems } from './gems.js';
 import { upgrades } from './upgrades.js';
-import { transition, camera, getRockTiles } from './world.js';
+import { transition, camera, getRockTiles, PAYMENT_ZONE } from './world.js';
 
 export const particles = [];
 export const floats    = [];
@@ -287,6 +287,27 @@ export function drawDebugButton(enabled, grassSpawnEnabled) {
   ctx.fillRect(W - 130, H - 36, 120, 28);
   ctx.fillStyle = '#fff';
   ctx.fillText('Download Log', W - 122, H - 17);
+}
+
+export function drawPaymentZone(frameCount) {
+  const { px, py, radius } = PAYMENT_ZONE;
+  const pulse = 0.55 + 0.35 * Math.sin(frameCount * 0.06);
+  const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+  grad.addColorStop(0,   `rgba(255, 215, 0, ${(pulse * 0.55).toFixed(3)})`);
+  grad.addColorStop(0.6, `rgba(200, 160, 0, ${(pulse * 0.35).toFixed(3)})`);
+  grad.addColorStop(1,   'rgba(150, 100, 0, 0)');
+  ctx.beginPath();
+  ctx.arc(px, py, radius, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(255, 215, 0, ${pulse.toFixed(3)})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillStyle = `rgba(255, 215, 0, ${pulse.toFixed(3)})`;
+  ctx.fillText('GRASS BARON', px, py - radius - 6);
+  ctx.textAlign = 'left';
 }
 
 export function drawIntro() {

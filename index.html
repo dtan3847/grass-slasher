@@ -66,6 +66,22 @@
     margin-top: 6px;
     letter-spacing: 0.03em;
   }
+  #debt-prompt {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.75);
+    border: 1px solid #e8c84a;
+    color: #e8c84a;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 8px 18px;
+    border-radius: 4px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -85,6 +101,8 @@
   <button class="btn" id="btn-movespeed" onclick="buyUpgrade('moveSpeed')">&#128070; Move Speed Lv1 (25)</button>
   <button class="btn autoslash-on" id="btn-autoslash-toggle" onclick="toggleAutoSlash()">Auto-slash: ON</button>
 </div>
+
+<div id="debt-prompt">Press E to pay debt</div>
 
 <div id="hints">WASD / Arrows = move &nbsp;|&nbsp; SPACE or Z = slash &nbsp;|&nbsp; Grass regrows automatically</div>
 
