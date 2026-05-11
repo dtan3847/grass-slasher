@@ -1,6 +1,6 @@
 import { canvas, ctx, W, H } from './constants.js';
-import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, startRetract, snapCardinal } from './player.js';
-import { grasses, initGrass, checkSlashHits, loadRoom } from './grass.js';
+import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, startRetract, snapCardinal, getSlashHitbox } from './player.js';
+import { grasses, initGrass, checkSlashHits, checkSlashCap, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
 import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
@@ -154,6 +154,10 @@ function update() {
       };
     }
 
+    if (player.slashTimer === player.sweepDur) {
+      checkSlashCap(getSlashHitbox(player.slashCardinal)[1]);
+    }
+
     let frameRecord = null;
     if (debugMode && currentSlashRecord) {
       frameRecord = { frame: frameCount, t: +t.toFixed(3), currentAngle: +currentAngle.toFixed(3), grasses: [] };
@@ -178,6 +182,7 @@ function update() {
           debugLog.push({ type: 'slash', ...currentSlashRecord });
           currentSlashRecord = null;
         }
+        checkSlashCap(getSlashHitbox(player.slashCardinal)[2]);
         if (slashQueued) {
           setSlashQueued(false);
           startSweep(snapCardinal(player.facing));

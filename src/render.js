@@ -1,5 +1,6 @@
 import { ctx, W, H, TILE } from './constants.js';
-import { player, SLASH_ARCS, snapCardinal } from './player.js';
+import { player, SLASH_ARCS, snapCardinal, getSlashHitbox } from './player.js';
+import { drawHitbox } from './hitbox.js';
 import { grasses } from './grass.js';
 import { gems } from './gems.js';
 import { upgrades } from './upgrades.js';
@@ -268,19 +269,12 @@ export function drawDebug(enabled, frame) {
   ];
   lines.forEach((line, i) => ctx.fillText(line, 10, 22 + i * 16));
 
-  const arcCardinal = player.slashState === 'idle' ? snapCardinal(player.facing) : player.slashCardinal;
-  const arc = SLASH_ARCS[arcCardinal];
+  const arcCardinal = (player.slashState === 'idle' || player.slashState === 'retracting')
+    ? snapCardinal(player.facing)
+    : player.slashCardinal;
   const px = transition.active ? transition.playerEntryX : player.x;
   const py = transition.active ? transition.playerEntryY : player.y;
-  const halfWidth = Math.atan2(3, player.slashRange);
-  const arcStart = arc.delta >= 0 ? arc.start - halfWidth : arc.start + halfWidth;
-  const arcEnd   = arc.delta >= 0 ? arc.start + arc.delta + halfWidth : arc.start + arc.delta - halfWidth;
-  ctx.beginPath();
-  ctx.moveTo(px, py);
-  ctx.arc(px, py, player.slashRange, arcStart, arcEnd, arc.delta < 0);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(255,0,0,0.25)';
-  ctx.fill();
+  drawHitbox(getSlashHitbox(arcCardinal), ctx, px, py);
 }
 
 export function drawDebugButton(enabled, grassSpawnEnabled) {

@@ -1,6 +1,7 @@
 import { TILE } from './constants.js';
-import { player } from './player.js';
+import { player, getSlashHitbox } from './player.js';
 import { upgrades } from './upgrades.js';
+import { testPoint } from './hitbox.js';
 import { spawnGem, TIER_WEIGHTS } from './gems.js';
 import { addCutParticles } from './render.js';
 import { getLayout } from './world.js';
@@ -31,8 +32,8 @@ export function loadRoom(rx, ry) {
 export function initGrass() { loadRoom(0, 2); }
 
 export function checkSlashHits(sweepAngle, recordTarget) {
-  const reach = player.slashRange;
-  const coarseReach = reach + 13;
+  const wedgePart = getSlashHitbox(player.slashCardinal)[0];
+  const coarseReach = wedgePart.reach + 13;
 
   for (const g of grasses) {
     if (!g.alive) continue;
@@ -41,13 +42,13 @@ export function checkSlashHits(sweepAngle, recordTarget) {
     if (dx * dx + dy * dy > coarseReach * coarseReach) continue;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx);
-    const halfAngTol = dist > 0 ? Math.atan2(13, dist) : Math.PI;
-    let d = angle - sweepAngle;
-    while (d >  Math.PI) d -= Math.PI * 2;
-    while (d < -Math.PI) d += Math.PI * 2;
-    const hit = Math.abs(d) <= halfAngTol;
+    const hit = testPoint(wedgePart, dx, dy, sweepAngle);
     if (hit) cutGrass(g);
     if (recordTarget) {
+      const halfAngTol = dist > 0 ? Math.atan2(13, dist) : Math.PI;
+      let d = angle - sweepAngle;
+      while (d >  Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
       recordTarget.grasses.push({
         gx: Math.round(g.x), gy: Math.round(g.y),
         dist: +dist.toFixed(1),
@@ -57,6 +58,15 @@ export function checkSlashHits(sweepAngle, recordTarget) {
         hit,
       });
     }
+  }
+}
+
+export function checkSlashCap(rectPart) {
+  for (const g of grasses) {
+    if (!g.alive) continue;
+    const dx = g.x - player.x;
+    const dy = g.y - player.y;
+    if (testPoint(rectPart, dx, dy, 0)) cutGrass(g);
   }
 }
 

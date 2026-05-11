@@ -9,6 +9,23 @@ export const SLASH_ARCS = [
 ];
 
 
+export function getSlashHitbox(cardinal) {
+  let arc;
+  if (cardinal === 1) {
+    arc = player.lastHorizDir >= 0
+      ? { start: 0, delta: Math.PI / 2 }
+      : { start: Math.PI, delta: -Math.PI / 2 };
+  } else {
+    arc = SLASH_ARCS[cardinal];
+  }
+  const reach = player.slashRange;
+  return [
+    { type: 'wedge', start: arc.start, delta: arc.delta, reach },
+    { type: 'rect', angle: arc.start,             length: reach, halfWidth: 3 },
+    { type: 'rect', angle: arc.start + arc.delta, length: reach, halfWidth: 3 },
+  ];
+}
+
 export function snapCardinal(angle) {
   const a = Math.atan2(Math.sin(angle), Math.cos(angle));
   if (a > -Math.PI*3/4 && a <= -Math.PI/4) return 3;
