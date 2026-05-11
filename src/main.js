@@ -225,7 +225,6 @@ function updateUI() {
     ['btn-gems',     'gemMult',    lvl => `&#128142; +Yield Lv${lvl+1}`,      null],
     ['btn-range',    'slashRange', lvl => `&#128207; Sword Size Lv${lvl+1}`,  null],
     ['btn-auto',     'autoSlash',  lvl => `&#129302; Auto-Slash Lv${lvl+1}`,  null],
-    ['btn-density',  'density',    lvl => `&#127807; More Grass Lv${lvl+1}`,  null],
     ['btn-gemtier',   'gemTier',    lvl => `&#128081; Gem Tier Lv${lvl+1}`,    3],
     ['btn-movespeed', 'moveSpeed',  lvl => `&#128070; Move Speed Lv${lvl+1}`,  5],
   ];

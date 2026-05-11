@@ -1,11 +1,9 @@
-import { grasses, grassCapacity, spawnGrass } from './grass.js';
 import { spendGems, gemCount } from './gems.js';
 
 export const upgrades = {
   gemMult:    { level: 0, baseCost: 10,  costMult: 1.6 },
   slashRange: { level: 0, baseCost: 20,  costMult: 1.7 },
   autoSlash:  { level: 0, baseCost: 50,  costMult: 2.2 },
-  density:    { level: 0, baseCost: 40,  costMult: 1.8 },
   gemTier:    { level: 0, baseCost: 30,  costMult: 2.0, maxLevel: 3 },
   moveSpeed:  { level: 0, baseCost: 25,  costMult: 1.8, maxLevel: 5 },
 };
@@ -22,10 +20,4 @@ export function buyUpgrade(id) {
   if (gemCount < cost) return;
   spendGems(cost);
   upgrades[id].level++;
-  if (id === 'density') {
-    const cap = grassCapacity();
-    while (grasses.length < cap) {
-      if (!spawnGrass()) break;
-    }
-  }
 }
