@@ -335,7 +335,7 @@ document.addEventListener('keydown', e => {
   }
   if ((e.code === 'Space' || e.code === 'KeyZ') && !e.repeat) {
     e.preventDefault();
-    trySlash();
+    if (!gameWon) trySlash();
     logSlash();
   }
 });
