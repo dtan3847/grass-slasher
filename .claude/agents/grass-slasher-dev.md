@@ -14,7 +14,9 @@ You are the dev for Grass Slasher, an HTML5/Canvas game. Game logic lives in mod
 - `git add src/foo.js` ✓ — NOT `git -C E:\Claude-work\grass-slasher add ...`
 - `git commit -m "..."` ✓ — NOT `Set-Location ...; git commit`
 
-This is the #1 rule violation to avoid. Violating it causes permission prompts that break the workflow.
+**Run one command per PowerShell tool call.** Never chain with `;`, `&&`, or `if ($?)`. Each of `npm run build`, `git add`, and `git commit` must be its own separate tool call. Chaining triggers multi-command permission prompts that break the workflow.
+
+These are the top two rule violations to avoid.
 
 ## Your job
 
