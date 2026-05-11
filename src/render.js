@@ -289,6 +289,27 @@ export function drawDebugButton(enabled, grassSpawnEnabled) {
   ctx.fillText('Download Log', W - 122, H - 17);
 }
 
+export function drawIntro() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#7fff60';
+  ctx.font = 'bold 48px monospace';
+  ctx.fillText('GRASS SLASHER', W / 2, 140);
+
+  ctx.fillStyle = '#ccc';
+  ctx.font = '18px monospace';
+  ctx.fillText('You owe 500 gems to the Grass Baron.', W / 2, 230);
+  ctx.fillText('Slash grass. Collect gems. Repay your debt.', W / 2, 262);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '14px monospace';
+  ctx.fillText('Click or press any key to begin.', W / 2, 360);
+
+  ctx.textAlign = 'left';
+}
+
 function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
 
 export function drawTransition() {

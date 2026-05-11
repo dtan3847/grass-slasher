@@ -5,11 +5,12 @@ import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
 import { debtRemaining, DEBT_TOTAL } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY } from './world.js';
-import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton } from './render.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro } from './render.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
 
+let introShown = false;
 let debugMode = false;
 let debugLog  = [];
 let slashRecords = [];
@@ -252,6 +253,11 @@ function updateUI() {
 }
 
 function loop() {
+  if (!introShown) {
+    drawIntro();
+    requestAnimationFrame(loop);
+    return;
+  }
   update();
   if (transition.active) {
     drawTransition();
@@ -298,6 +304,7 @@ function downloadLog() {
 }
 
 document.addEventListener('keydown', e => {
+  if (!introShown) { introShown = true; return; }
   keys[e.code] = true;
   if (e.code === 'Backquote') {
     debugMode = !debugMode;
@@ -316,6 +323,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 canvas.addEventListener('click', e => {
+  if (!introShown) { introShown = true; return; }
   const rect = canvas.getBoundingClientRect();
   const mx = (e.clientX - rect.left) * (W / rect.width);
   const my = (e.clientY - rect.top)  * (H / rect.height);
