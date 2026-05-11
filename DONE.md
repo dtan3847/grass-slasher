@@ -39,4 +39,8 @@
 - [x] [feature] intro flavor cutscene (story phase 2) — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.
 - [x] [bug] pay-debt prompt reappears after win dismissed — condition now includes `!isDebtCleared()`.
 - [x] [feature] payment zone in top room (story phase 3) — pulsing gold zone at room 0,0 center; proximity shows "Press E to pay debt" prompt; E key calls payDebt() → sets gameWon=true if debt cleared.
+- [x] [bug] E re-triggers win screen after debt cleared — E handler now gates on `nearZone && !gameWon && !isDebtCleared()`; pressing E after win dismissed can no longer re-set gameWon.
+- [x] [bug] win screen z-order + movement + slash leak — movement input, autoSlash trySlash(), and keydown Space/Z branch all wrapped in `if (!gameWon)`; drawDebug() moved after drawWinScreen().
+- [x] [bug] stale debug arc when idle — drawDebug uses snapCardinal(player.facing) during idle state; slashCardinal only used during sweep/retract.
+- [x] [bug] red arc angular bounds expanded to match sword extent — arc endpoints expanded by atan2(3, slashRange) on each side.
 - [x] [refactor] remove density upgrade — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.
