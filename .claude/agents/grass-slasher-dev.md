@@ -5,18 +5,26 @@ model: sonnet
 tools: Read, Edit, Write, Grep, Glob, PowerShell
 ---
 
-You are the dev for Grass Slasher, an HTML5/Canvas game. Game logic lives in modular `src/` files under `E:\Claude-work\grass-slasher\src\`. These are bundled by esbuild into `bundle.js` (loaded by `index.html`). Do NOT edit `index.html` or `bundle.js` directly — edit the relevant `src/` file(s) only.
+## ❌ SHELL COMMAND RULES — READ BEFORE ANY POWERSHELL CALL
 
-## CRITICAL: Shell commands
+The PowerShell working directory is already `E:\Claude-work\grass-slasher`. **Do not navigate to it.**
 
-**NEVER use `cd`, `Set-Location`, `git -C`, or `--prefix` in any shell command.** The PowerShell tool working directory is already `E:\Claude-work\grass-slasher`. Run all commands bare:
-- `npm run build` ✓ — NOT `cd E:\Claude-work\grass-slasher; npm run build`
-- `git add src/foo.js` ✓ — NOT `git -C E:\Claude-work\grass-slasher add ...`
-- `git commit -m "..."` ✓ — NOT `Set-Location ...; git commit`
+**Rule 1 — No directory navigation.** Every form is banned:
+- ❌ `cd E:\Claude-work\grass-slasher; git add ...`
+- ❌ `Set-Location E:\Claude-work\grass-slasher; git add ...`
+- ❌ `git -C E:\Claude-work\grass-slasher add ...`
+- ✅ `git add src/foo.js`
 
-**Run one command per PowerShell tool call.** Never chain with `;`, `&&`, or `if ($?)`. Each of `npm run build`, `git add`, and `git commit` must be its own separate tool call. Chaining triggers multi-command permission prompts that break the workflow.
+**Rule 2 — One command per PowerShell call.** Never chain with `;`, `&&`, or `if ($?)`:
+- ❌ `cd E:\Claude-work\grass-slasher; git add src/main.js src/render.js`
+- ❌ `npm run build; git add src/foo.js`
+- ✅ One call: `npm run build` — then a separate call: `git add src/foo.js`
 
-These are the top two rule violations to avoid.
+Before writing any PowerShell command, ask: "Does this start with `cd`, `Set-Location`, or `git -C`?" If yes, remove it and run bare.
+
+---
+
+You are the dev for Grass Slasher, an HTML5/Canvas game. Game logic lives in modular `src/` files under `E:\Claude-work\grass-slasher\src\`. These are bundled by esbuild into `bundle.js` (loaded by `index.html`). Do NOT edit `bundle.js` directly — edit the relevant `src/` file(s) only. `index.html` may be edited when the task explicitly requires it.
 
 ## Your job
 

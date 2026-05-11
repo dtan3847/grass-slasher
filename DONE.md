@@ -35,3 +35,6 @@
 - [x] [feature] debug grass spawn toggle — grassSpawnEnabled bool in main.js gates spawnGrass(); toggle button in debug overlay.
 - [x] [feature] rock wall tiles on dead-end edges — getRockTiles(rx,ry) in world.js; drawRocks() in render.js (jagged polygon boulders); blockedAt() collision in main.js; rocks rendered in drawTransition() via oldRocks snapshot.
 - [x] [ux] remove slash-count and grass-alive from main HUD — only gem count remains.
+- [x] [feature] debt module + HUD (story phase 1) — src/debt.js with DEBT_TOTAL=500, debtRemaining, payDebt(), isDebtCleared(); "Debt: X / 500" shown in HUD.
+- [x] [feature] intro flavor cutscene (story phase 2) — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.
+- [x] [refactor] remove density upgrade — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.

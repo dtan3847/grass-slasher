@@ -30,13 +30,16 @@ States: `[ ]` open → `[~]` built/unverified → move to `DONE.md` when verifie
 
 ## Story / debt arc (phases 1–4, sequential)
 
-- [~] [feature] debt module + HUD (story phase 1) — new `src/debt.js`: export `DEBT_TOTAL = 500`, `let debtRemaining`, `payDebt(amount)` (deducts from gemCount via imported addGems(-n) and from debtRemaining, clamps to 0), `isDebtCleared()`. Import in `src/main.js`, show "Debt: X / 500" in `updateUI()`. Add debt display element to `index.html` HUD. No payment logic yet. (priority: med)
 
-- [ ] [feature] intro flavor cutscene (story phase 2) — on game start (before first frame), show canvas overlay: title "GRASS SLASHER", then flavor lines "You owe 500 gems to the Grass Baron." / "Slash grass. Collect gems. Repay your debt." / "Click or press any key to begin." Dismiss on click or keydown → sets `introShown = true`, game loop starts. `introShown` flag in `src/main.js`; `drawIntro()` added to `src/render.js`; loop blocked until dismissed. (priority: med)
+ — on game start (before first frame), show canvas overlay: title "GRASS SLASHER", then flavor lines "You owe 500 gems to the Grass Baron." / "Slash grass. Collect gems. Repay your debt." / "Click or press any key to begin." Dismiss on click or keydown → sets `introShown = true`, game loop starts. `introShown` flag in `src/main.js`; `drawIntro()` added to `src/render.js`; loop blocked until dismissed. (priority: med)
 
 - [ ] [feature] payment zone in top room (story phase 3) — add payment zone at center of room 0,0 (col 10, row 7 → pixel 320, 224). In `src/world.js` export `PAYMENT_ZONE = { rx:0, ry:0, px:320, py:224, radius:40 }`. In `src/render.js` add `drawPaymentZone()`: glowing gold circle (radial gradient, pulsing alpha via frameCount) with label "GRASS BARON" above. In `src/main.js` update(): when current room is 0,0 and player within 40px of zone center, show HUD prompt "Press E to pay debt"; on E keydown call `payDebt(gemCount)` then check `isDebtCleared()` → set `gameWon = true`. Draw zone in loop (inside camera translate block, only when in room 0,0). (priority: med)
 
 - [ ] [feature] win screen (story phase 4) — `gameWon` bool in `src/main.js`. When true, after normal draw, overlay `drawWinScreen()` from `src/render.js`: semi-transparent black fill, text "Debt repaid." / "The Grass Baron nods slowly." / '"You are free... for now."' / "[ Continue exploring ]" button rect. Click on button or press Enter → `gameWon = false`, game resumes. No state reset — world/gems/upgrades persist. (priority: med)
+
+- [ ] [feature] regrowth upgrade — grass currently regrows always; gate respawn on new upgrade. Add `regrowth: { level: 0, baseCost: 60, costMult: 1.0, maxLevel: 1 }` to `src/upgrades.js` (maxLevel 1 = one-time unlock, costMult irrelevant). In `src/main.js` respawn loop (around line 203), change condition to `if (grassSpawnEnabled && upgrades.regrowth.level > 0)`. Add shop button `id="btn-regrowth"` to `index.html` shop div (`onclick="buyUpgrade('regrowth')"`, label "🌱 Regrowth"). Add to `updateUI()` defs array: `['btn-regrowth', 'regrowth', lvl => '🌱 Regrowth', 1]`. Remove "Grass regrows automatically" from hints text in index.html (no replacement). Files: `src/upgrades.js`, `src/main.js`, `index.html`. (priority: med)
+
+- [ ] [ux] hide auto-slash toggle until auto-slash is purchased — toggle button `btn-autoslash-toggle` always visible even at level 0. Fix: in `updateUI()` (`src/main.js` ~line 248), add `toggleBtn.style.display = upgrades.autoSlash.level > 0 ? '' : 'none';`. Also set `style="display:none"` on the button in `index.html` as initial state. Files: `src/main.js`, `index.html`. (priority: med)
 
 ## Known intentional quirks (do not fix)
 
