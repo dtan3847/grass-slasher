@@ -37,4 +37,6 @@
 - [x] [ux] remove slash-count and grass-alive from main HUD — only gem count remains.
 - [x] [feature] debt module + HUD (story phase 1) — src/debt.js with DEBT_TOTAL=500, debtRemaining, payDebt(), isDebtCleared(); "Debt: X / 500" shown in HUD.
 - [x] [feature] intro flavor cutscene (story phase 2) — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.
+- [x] [bug] pay-debt prompt reappears after win dismissed — condition now includes `!isDebtCleared()`.
+- [x] [feature] payment zone in top room (story phase 3) — pulsing gold zone at room 0,0 center; proximity shows "Press E to pay debt" prompt; E key calls payDebt() → sets gameWon=true if debt cleared.
 - [x] [refactor] remove density upgrade — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.

@@ -9,5 +9,18 @@
       "PowerShell(git diff *)",
       "PowerShell(git status *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NonInteractive -File .claude/hooks/normalize-shell.ps1"
+          }
+        ]
+      }
+    ]
   }
 }

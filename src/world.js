@@ -68,6 +68,8 @@ export const transition = {
   playerEntryX: 0, playerEntryY: 0,
 };
 
+export const PAYMENT_ZONE = { rx: 0, ry: 0, px: 320, py: 224, radius: 40 };
+
 export function getCurrentRoom() { return ROOMS[`${roomX},${roomY}`]; }
 
 export function getNeighbor(dir) {

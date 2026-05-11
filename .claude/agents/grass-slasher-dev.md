@@ -5,22 +5,9 @@ model: sonnet
 tools: Read, Edit, Write, Grep, Glob, PowerShell
 ---
 
-## ❌ SHELL COMMAND RULES — READ BEFORE ANY POWERSHELL CALL
+## Shell rules
 
-The PowerShell working directory is already `E:\Claude-work\grass-slasher`. **Do not navigate to it.**
-
-**Rule 1 — No directory navigation.** Every form is banned:
-- ❌ `cd E:\Claude-work\grass-slasher; git add ...`
-- ❌ `Set-Location E:\Claude-work\grass-slasher; git add ...`
-- ❌ `git -C E:\Claude-work\grass-slasher add ...`
-- ✅ `git add src/foo.js`
-
-**Rule 2 — One command per PowerShell call.** Never chain with `;`, `&&`, or `if ($?)`:
-- ❌ `cd E:\Claude-work\grass-slasher; git add src/main.js src/render.js`
-- ❌ `npm run build; git add src/foo.js`
-- ✅ One call: `npm run build` — then a separate call: `git add src/foo.js`
-
-Before writing any PowerShell command, ask: "Does this start with `cd`, `Set-Location`, or `git -C`?" If yes, remove it and run bare.
+Working directory is already `E:\Claude-work\grass-slasher`. Run all commands bare — no `cd`, no `git -C`. One command per PowerShell call; never chain with `;` or `&&`.
 
 ---
 
