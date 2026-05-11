@@ -3,6 +3,7 @@ import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, 
 import { grasses, initGrass, checkSlashHits, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
+import { debtRemaining, DEBT_TOTAL } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY } from './world.js';
 import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton } from './render.js';
 
@@ -217,6 +218,7 @@ function update() {
 
 function updateUI() {
   document.getElementById('gem-count').textContent = gemCount;
+  document.getElementById('debt-display').textContent = `Debt: ${debtRemaining} / ${DEBT_TOTAL}`;
 
   const defs = [
     ['btn-gems',     'gemMult',    lvl => `&#128142; +Yield Lv${lvl+1}`,      null],
