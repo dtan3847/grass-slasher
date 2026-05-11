@@ -33,3 +33,5 @@
 - [x] [bug] gems disappear at transition start instead of end — clearGems() moved from startTransition() to update() just before commitTransition().
 - [x] [bug] player and gems not rendered during transition slide — drawPlayer() given optional px/py params; drawTransition() now draws gems with old-room offset and player (at entry coords) with new-room offset.
 - [x] [feature] debug grass spawn toggle — grassSpawnEnabled bool in main.js gates spawnGrass(); toggle button in debug overlay.
+- [x] [feature] rock wall tiles on dead-end edges — getRockTiles(rx,ry) in world.js; drawRocks() in render.js (jagged polygon boulders); blockedAt() collision in main.js; rocks rendered in drawTransition() via oldRocks snapshot.
+- [x] [ux] remove slash-count and grass-alive from main HUD — only gem count remains.
