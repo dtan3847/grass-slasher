@@ -5,7 +5,7 @@ import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
 import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY, PAYMENT_ZONE } from './world.js';
-import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone } from './render.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn } from './render.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
@@ -285,6 +285,7 @@ function loop() {
     drawDebug(debugMode, frameCount);
     drawDebugButton(debugMode, grassSpawnEnabled);
   }
+  drawWinScreen(gameWon);
   updateUI();
   requestAnimationFrame(loop);
 }
@@ -312,6 +313,7 @@ function downloadLog() {
 
 document.addEventListener('keydown', e => {
   if (!introShown) { introShown = true; return; }
+  if (gameWon && e.code === 'Enter') { gameWon = false; return; }
   keys[e.code] = true;
   if (e.code === 'Backquote') {
     debugMode = !debugMode;
@@ -343,6 +345,14 @@ canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const mx = (e.clientX - rect.left) * (W / rect.width);
   const my = (e.clientY - rect.top)  * (H / rect.height);
+
+  if (gameWon) {
+    const b = winContinueBtn;
+    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+      gameWon = false;
+    }
+    return;
+  }
 
   if (debugMode && mx >= W - 130 && mx <= W - 10 && my >= H - 70 && my <= H - 42) {
     grassSpawnEnabled = !grassSpawnEnabled;

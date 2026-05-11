@@ -310,6 +310,46 @@ export function drawPaymentZone(frameCount) {
   ctx.textAlign = 'left';
 }
 
+export const winContinueBtn = { x: 0, y: 0, w: 0, h: 0 };
+
+export function drawWinScreen(gameWon) {
+  if (!gameWon) return;
+  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#ffd700';
+  ctx.font = 'bold 32px monospace';
+  ctx.fillText('Debt repaid.', W / 2, H / 2 - 80);
+
+  ctx.fillStyle = '#ccc';
+  ctx.font = '18px monospace';
+  ctx.fillText('The Grass Baron nods slowly.', W / 2, H / 2 - 36);
+
+  ctx.fillStyle = '#aaa';
+  ctx.font = 'italic 16px monospace';
+  ctx.fillText('"You are free... for now."', W / 2, H / 2 + 2);
+
+  const btnW = 240, btnH = 40;
+  const btnX = W / 2 - btnW / 2;
+  const btnY = H / 2 + 44;
+  winContinueBtn.x = btnX; winContinueBtn.y = btnY;
+  winContinueBtn.w = btnW; winContinueBtn.h = btnH;
+
+  ctx.fillStyle = 'rgba(255,215,0,0.18)';
+  ctx.strokeStyle = 'rgba(255,215,0,0.85)';
+  ctx.lineWidth = 2;
+  ctx.fillRect(btnX, btnY, btnW, btnH);
+  ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+  ctx.fillStyle = '#ffd700';
+  ctx.font = 'bold 15px monospace';
+  ctx.fillText('[ Continue exploring ]', W / 2, btnY + 26);
+
+  ctx.textAlign = 'left';
+}
+
 export function drawIntro() {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
