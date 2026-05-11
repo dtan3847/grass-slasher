@@ -246,6 +246,7 @@ const CARDINAL_NAMES = ['right', 'down', 'left', 'up'];
 
 export function drawDebug(enabled, frame) {
   if (!enabled) return;
+  if (transition.active) return;
 
   const sc = snapCardinal(player.facing);
   const facingDeg = Math.round(player.facing * 180 / Math.PI);
