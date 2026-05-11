@@ -111,7 +111,7 @@ function update() {
   const nearPaymentZone = inPaymentRoom &&
     Math.hypot(player.x - PAYMENT_ZONE.px, player.y - PAYMENT_ZONE.py) <= PAYMENT_ZONE.radius;
   const promptEl = document.getElementById('debt-prompt');
-  if (promptEl) promptEl.style.display = (nearPaymentZone && !gameWon) ? 'block' : 'none';
+  if (promptEl) promptEl.style.display = (nearPaymentZone && !gameWon && !isDebtCleared()) ? 'block' : 'none';
 
   let dx = 0, dy = 0;
   if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
