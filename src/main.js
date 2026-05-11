@@ -1,5 +1,5 @@
 import { canvas, ctx, W, H } from './constants.js';
-import { player, SLASH_ARCS, slashQueued, setSlashQueued, slashCount, trySlash, startSweep, startRetract, snapCardinal } from './player.js';
+import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, startRetract, snapCardinal } from './player.js';
 import { grasses, initGrass, checkSlashHits, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
@@ -217,8 +217,6 @@ function update() {
 
 function updateUI() {
   document.getElementById('gem-count').textContent = gemCount;
-  document.getElementById('slash-count').textContent = slashCount;
-  document.getElementById('grass-count').textContent = grasses.filter(g => g.alive).length;
 
   const defs = [
     ['btn-gems',     'gemMult',    lvl => `&#128142; +Yield Lv${lvl+1}`,      null],
