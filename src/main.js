@@ -197,18 +197,8 @@ function update() {
 
   if (player.autoSlashCooldown > 0) player.autoSlashCooldown--;
   if (!gameWon && autoSlashEnabled && upgrades.autoSlash.level > 0 && player.slashState === 'idle' && player.autoSlashCooldown <= 0) {
-    let nearest = null, nearDist = Infinity;
-    const range = player.slashRange * 0.95;
-    for (const g of grasses) {
-      if (!g.alive) continue;
-      const d = Math.hypot(g.x - player.x, g.y - player.y);
-      if (d < range && d < nearDist) { nearDist = d; nearest = g; }
-    }
-    if (nearest) {
-      player.facing = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-      player.autoSlashCooldown = Math.max(10, 46 - upgrades.autoSlash.level * 10);
-      trySlash();
-    }
+    player.autoSlashCooldown = Math.max(10, 46 - upgrades.autoSlash.level * 10);
+    trySlash();
   }
 
   for (const g of grasses) {
