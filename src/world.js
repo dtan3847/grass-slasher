@@ -1,55 +1,90 @@
+import { W, H, COLS, ROWS, TILE } from './constants.js';
+
 // Room definitions
 // widthCells/heightCells: how many 640×480 cells this room spans
 // layout: {col, row}[] — room-local grid coords
 const ROOMS = {
-  '0,0': {
-    widthCells: 1, heightCells: 1,
-    layout: [
-      {col:2,row:1},{col:3,row:1},{col:2,row:2},{col:4,row:2},{col:3,row:3},
-      {col:15,row:1},{col:16,row:1},{col:17,row:2},{col:15,row:3},{col:16,row:3},
-      {col:1,row:5},{col:2,row:6},{col:1,row:7},{col:3,row:7},
-      {col:17,row:5},{col:18,row:6},{col:17,row:7},{col:16,row:8},
-      {col:5,row:6},{col:6,row:7},{col:5,row:8},
-      {col:13,row:6},{col:14,row:7},{col:13,row:8},
-      {col:3,row:11},{col:4,row:12},{col:15,row:11},{col:16,row:12},
-      {col:8,row:12},{col:11,row:12},
-    ]
-  },
-  '0,1': {
-    widthCells: 1, heightCells: 1,
-    layout: [
-      {col:1,row:2},{col:2,row:3},{col:1,row:4},{col:3,row:2},
-      {col:17,row:2},{col:16,row:3},{col:18,row:3},{col:17,row:4},
-      {col:4,row:5},{col:5,row:5},{col:6,row:6},{col:7,row:5},
-      {col:12,row:5},{col:13,row:5},{col:14,row:6},{col:13,row:7},
-      {col:2,row:9},{col:3,row:10},{col:2,row:11},
-      {col:16,row:9},{col:17,row:10},{col:16,row:11},
-      {col:7,row:10},{col:8,row:11},{col:11,row:10},{col:12,row:11},
-      {col:9,row:13},{col:10,row:13},
-    ]
-  },
-  '0,2': {
-    widthCells: 1, heightCells: 1,
-    layout: [
-      {col:1,row:1},{col:2,row:1},{col:1,row:2},{col:3,row:2},{col:2,row:3},{col:1,row:4},
-      {col:17,row:1},{col:18,row:1},{col:17,row:2},{col:16,row:3},{col:18,row:3},{col:17,row:4},
-      {col:5,row:4},{col:6,row:5},{col:5,row:6},{col:4,row:7},
-      {col:14,row:4},{col:13,row:5},{col:14,row:6},{col:15,row:7},
-      {col:3,row:9},{col:4,row:10},{col:3,row:11},{col:5,row:11},
-      {col:15,row:9},{col:16,row:10},{col:15,row:11},{col:14,row:11},
-      {col:7,row:12},{col:8,row:13},{col:11,row:13},{col:12,row:12},
-    ]
-  },
+  '0,0': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:2},{col:1,row:3},{col:3,row:1},
+    {col:7,row:1},{col:8,row:2},{col:7,row:3},{col:6,row:1},
+    {col:1,row:5},{col:2,row:6},{col:3,row:6},
+    {col:7,row:5},{col:8,row:6},{col:6,row:6},
+    {col:4,row:3},{col:5,row:4},
+  ]},
+  '1,0': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:1},{col:1,row:2},
+    {col:8,row:1},{col:7,row:1},{col:8,row:2},
+    {col:1,row:5},{col:2,row:6},{col:1,row:6},
+    {col:8,row:5},{col:7,row:6},{col:8,row:6},
+    {col:2,row:3},{col:2,row:4},
+    {col:7,row:3},{col:7,row:4},
+  ]},
+  '2,0': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:2},{col:1,row:3},{col:3,row:2},
+    {col:7,row:1},{col:8,row:2},{col:7,row:3},{col:6,row:2},
+    {col:1,row:5},{col:2,row:6},{col:3,row:5},
+    {col:7,row:5},{col:8,row:6},{col:6,row:5},
+    {col:4,row:4},{col:5,row:3},
+  ]},
+  '0,1': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:1},{col:1,row:2},{col:3,row:2},
+    {col:7,row:1},{col:8,row:1},{col:8,row:2},{col:6,row:2},
+    {col:1,row:4},{col:1,row:5},{col:2,row:6},
+    {col:8,row:4},{col:8,row:5},{col:7,row:6},
+    {col:4,row:3},{col:5,row:5},
+  ]},
+  '1,1': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:2},{col:1,row:3},
+    {col:8,row:1},{col:7,row:2},{col:8,row:3},
+    {col:1,row:5},{col:2,row:6},{col:1,row:6},
+    {col:8,row:5},{col:7,row:6},{col:8,row:6},
+    {col:4,row:1},{col:5,row:1},{col:4,row:6},{col:5,row:6},
+  ]},
+  '2,1': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:2},{col:3,row:1},{col:1,row:2},
+    {col:7,row:1},{col:8,row:2},{col:6,row:1},{col:8,row:1},
+    {col:1,row:5},{col:2,row:5},{col:1,row:6},
+    {col:7,row:5},{col:8,row:5},{col:8,row:6},
+    {col:4,row:3},{col:5,row:4},
+  ]},
+  '0,2': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:2},{col:1,row:3},{col:3,row:1},
+    {col:7,row:1},{col:8,row:2},{col:7,row:3},{col:6,row:1},
+    {col:1,row:5},{col:2,row:6},{col:3,row:6},
+    {col:7,row:5},{col:8,row:6},{col:6,row:6},
+    {col:4,row:4},{col:5,row:3},
+  ]},
+  '1,2': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:1},{col:1,row:2},
+    {col:8,row:1},{col:7,row:1},{col:8,row:2},
+    {col:1,row:5},{col:2,row:6},{col:1,row:6},
+    {col:8,row:5},{col:7,row:6},{col:8,row:6},
+    {col:2,row:3},{col:2,row:4},
+    {col:7,row:3},{col:7,row:4},
+  ]},
+  '2,2': { widthCells:1, heightCells:1, layout: [
+    {col:1,row:1},{col:2,row:2},{col:3,row:1},{col:1,row:2},
+    {col:7,row:1},{col:8,row:2},{col:6,row:1},{col:8,row:1},
+    {col:1,row:5},{col:2,row:5},{col:3,row:6},
+    {col:7,row:5},{col:8,row:5},{col:6,row:6},
+    {col:4,row:3},{col:5,row:4},
+  ]},
 };
 
 // World map adjacency. null = wall.
 const WORLD_MAP = {
-  '0,0': { up: null,   down: [0,1], left: null, right: null },
-  '0,1': { up: [0,0],  down: [0,2], left: null, right: null },
-  '0,2': { up: [0,1],  down: null,  left: null, right: null },
+  '0,0': { up:null,    down:[0,1], left:null,    right:[1,0] },
+  '1,0': { up:null,    down:[1,1], left:[0,0],   right:[2,0] },
+  '2,0': { up:null,    down:[2,1], left:[1,0],   right:null  },
+  '0,1': { up:[0,0],   down:[0,2], left:null,    right:[1,1] },
+  '1,1': { up:[1,0],   down:[1,2], left:[0,1],   right:[2,1] },
+  '2,1': { up:[2,0],   down:[2,2], left:[1,1],   right:null  },
+  '0,2': { up:[0,1],   down:null,  left:null,    right:[1,2] },
+  '1,2': { up:[1,1],   down:null,  left:[0,2],   right:[2,2] },
+  '2,2': { up:[2,1],   down:null,  left:[1,2],   right:null  },
 };
 
-export let roomX = 0, roomY = 2;
+export let roomX = 1, roomY = 2;
 
 // Camera (top-left of viewport in room-pixel space)
 export const camera = { x: 0, y: 0 };
@@ -68,7 +103,7 @@ export const transition = {
   playerEntryX: 0, playerEntryY: 0,
 };
 
-export const PAYMENT_ZONE = { rx: 0, ry: 0, px: 320, py: 224, radius: 40 };
+export const PAYMENT_ZONE = { rx:1, ry:0, px:320, py:256, radius:40 };
 
 export function getCurrentRoom() { return ROOMS[`${roomX},${roomY}`]; }
 
@@ -78,33 +113,26 @@ export function getNeighbor(dir) {
 
 export function getRoomPixelSize(rx, ry) {
   const r = ROOMS[`${rx},${ry}`];
-  return r ? { w: r.widthCells * 640, h: r.heightCells * 480 } : { w: 640, h: 480 };
+  return r ? { w: r.widthCells * W, h: r.heightCells * H } : { w: W, h: H };
 }
 
 export function getLayout(rx, ry) { return ROOMS[`${rx},${ry}`]?.layout ?? []; }
 
 export function getRockTiles(rx, ry) {
   const adj = WORLD_MAP[`${rx},${ry}`] ?? {};
+  const half = TILE / 2;
   const tiles = [];
   if (adj.left === null) {
-    for (let r = 0; r < 15; r++) {
-      tiles.push({ x: 0 * 32 + 16, y: r * 32 + 16 });
-    }
+    for (let r = 0; r < ROWS; r++) tiles.push({ x: 0 * TILE + half, y: r * TILE + half });
   }
   if (adj.right === null) {
-    for (let r = 0; r < 15; r++) {
-      tiles.push({ x: 19 * 32 + 16, y: r * 32 + 16 });
-    }
+    for (let r = 0; r < ROWS; r++) tiles.push({ x: (COLS - 1) * TILE + half, y: r * TILE + half });
   }
   if (adj.up === null) {
-    for (let c = 0; c < 20; c++) {
-      tiles.push({ x: c * 32 + 16, y: 0 * 32 + 16 });
-    }
+    for (let c = 0; c < COLS; c++) tiles.push({ x: c * TILE + half, y: 0 * TILE + half });
   }
   if (adj.down === null) {
-    for (let c = 0; c < 20; c++) {
-      tiles.push({ x: c * 32 + 16, y: 14 * 32 + 16 });
-    }
+    for (let c = 0; c < COLS; c++) tiles.push({ x: c * TILE + half, y: (ROWS - 1) * TILE + half });
   }
   return tiles;
 }
@@ -140,6 +168,6 @@ export function commitTransition() {
 }
 
 export function updateCamera(px, py, roomPxW, roomPxH) {
-  camera.x = Math.max(0, Math.min(roomPxW - 640, px - 320));
-  camera.y = Math.max(0, Math.min(roomPxH - 480, py - 240));
+  camera.x = Math.max(0, Math.min(roomPxW - W, px - W * 0.5));
+  camera.y = Math.max(0, Math.min(roomPxH - H, py - H * 0.5));
 }
