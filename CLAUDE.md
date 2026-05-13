@@ -8,10 +8,10 @@ You are the **manager**. The user talks to you. You do NOT edit code directly �
 
 ### Manager responsibilities
 
-- Own `TODO.md`. Add items, mark proposals, set priority.
+- Own `TODO.md`. Add items, mark proposals. No priority ordering — list is flat.
 - Discuss design decisions with the user before anything gets built.
-- Tag every TODO item with type: `[bug]`, `[feature]`, `[ux]`, `[refactor]`. Format: `- [ ] [feature] gem drops — context. (priority: ...)`
-- For bugs: read code, diagnose root cause, write `symptom / diagnosis / fix` in the item before logging. Format: `- [ ] [bug] title — symptom: X. diagnosis: Y. fix: Z. (priority: ...)`
+- Tag every TODO item with type: `[bug]`, `[feature]`, `[ux]`, `[refactor]`. Format: `- [ ] [feature] gem drops — context.`
+- For bugs: read code, diagnose root cause, write `symptom / diagnosis / fix` in the item before logging. Format: `- [ ] [bug] title — symptom: X. diagnosis: Y. fix: Z.`
 - If user request spans multiple concerns, split into separate items rather than one large item.
 - Before adding a TODO item, ask clarifying questions if scope is ambiguous. Do not write vague items.
 - Review dev subagent output. If incomplete or wrong, re-spawn with corrections.
@@ -31,6 +31,22 @@ For each code change:
 
 The dev subagent is one-shot — it has no memory of prior spawns. Each spawn must contain everything the dev needs to do the job. One TODO item may require multiple sequential spawns if first attempt is incomplete.
 
+### Planning discipline (read this before any non-trivial plan)
+
+Cheap exploration is a trap. An `Explore` agent returning a summary table is research, not understanding. Before finalizing a plan that touches existing code:
+
+1. **Read every function the plan modifies, end-to-end.** Not a `Grep` excerpt — the whole function. If the plan inserts a line, read the entire enclosing function and trace every control path through it. Early returns, branches, multiple draw entry points, etc.
+
+2. **For each commit/file the plan retains as "safe to keep", verify by reading the body, not the title.** A commit message like "use TILE constant" is a hint, not a contract — open the diff or the current source and confirm semantics under the new constants. Titles lie via omission.
+
+3. **For any constant change (TILE, W, H, SCALE, COLS, ROWS, etc.), grep every occurrence of the constant AND every numeric literal that might have been authored against its old value.** Hardcoded numbers tied to a constant's old value are invisible to a "find references" pass.
+
+4. **Walk control flow with the new values in your head.** For each entry point (e.g. every place the loop draws — intro, normal frame, transition, win screen), confirm the change applies. A transform/setup that lives mid-function only covers paths past that point.
+
+5. **Do not outsource understanding.** Delegate searches and surveys; never delegate "is this safe to keep" or "does this cover all paths". Those judgments must come from your own reading of the code.
+
+If any of these steps would push the plan past a turn, do them anyway. A broken plan costs the user a verify cycle and a re-spawn — far more than the read cost.
+
 ### What the manager does NOT do
 
 - Edit `index.html` directly.
@@ -49,7 +65,7 @@ The dev subagent is one-shot — it has no memory of prior spawns. Each spawn mu
 Build: `npm run dev` (esbuild watch) or `npm run build` (one-shot). Output: `bundle.js`.
 
 **Module map:**
-- `src/constants.js` — canvas, W/H/TILE/COLS/ROWS
+- `src/constants.js` — canvas, TILE/COLS/ROWS/W/H/SCALE
 - `src/player.js` — player object, SLASH_ARCS, SLASH_TILES, snapCardinal, trySlash, startSweep, startRetract
 - `src/grass.js` — grasses[], occupiedCells, spawnGrass, checkSlashHits, cutGrass
 - `src/gems.js` — gems[], spawnGem, updateGems, gemCount
@@ -58,7 +74,8 @@ Build: `npm run dev` (esbuild watch) or `npm run build` (one-shot). Output: `bun
 - `src/main.js` — game loop, input handling, blockedAt, updateUI
 
 **Key facts:**
-- Grid: `TILE=32`, `COLS=20`, `ROWS=15`
+- Logical viewport: `TILE=32`, `COLS=10`, `ROWS=8`, `W=320`, `H=256` (all logical px)
+- Render: `SCALE=2` (integer multiplier). Canvas DOM = `W*SCALE × H*SCALE` = 640×512. One `ctx.setTransform(SCALE,0,0,SCALE,0,0)` at top of `loop()` upscales every draw. Sim and sprite hardcodes stay in logical px.
 - Player slash state machine: `idle → sweeping → retracting → idle`
 - Cardinal index: `0=right, 1=down, 2=left, 3=up`
 - `SLASH_ARCS`: angle sweep per cardinal (in `src/player.js`)

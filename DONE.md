@@ -43,4 +43,14 @@
 - [x] [bug] win screen z-order + movement + slash leak — movement input, autoSlash trySlash(), and keydown Space/Z branch all wrapped in `if (!gameWon)`; drawDebug() moved after drawWinScreen().
 - [x] [bug] stale debug arc when idle — drawDebug uses snapCardinal(player.facing) during idle state; slashCardinal only used during sweep/retract.
 - [x] [bug] red arc angular bounds expanded to match sword extent — arc endpoints expanded by atan2(3, slashRange) on each side.
-- [x] [refactor] remove density upgrade — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs. — static black overlay on start; title + flavor lines + dismiss prompt; keydown/click sets introShown=true; game loop early-returns until dismissed.
+- [x] [bug] debug arc teleports during room transition — skips drawing arc when transition.active.
+- [x] [bug] slash fires during win screen — Space/Z keydown handler wrapped in `if (!gameWon)`.
+- [x] [refactor] hitbox system — src/hitbox.js with testPoint + drawHitbox; compound hitbox (wedge + rect end-caps); getSlashHitbox in player.js; grass.js uses testPoint; fixes close-range misses and down-facing arc direction.
+- [x] [bug] auto-slash ignores facing direction — auto-slash now calls trySlash() on cooldown tick using player.cardinal, same as manual input. Removed nearest-grass search loop.
+- [x] [refactor] remove density upgrade — grassCapacity/spawnGrass removed from grass.js; density removed from upgrades.js; btn-density removed from index.html and updateUI() defs.
+- [x] [refactor] expand world to 3×3, rooms 10×8 — 9 rooms in src/world.js with full adjacency; tile-unit layouts, TILE-agnostic. (commit 4273fb7)
+- [x] [refactor] separate logical viewport from render via SCALE — TILE=32, COLS=10, ROWS=8, W=320, H=256, SCALE=2 in src/constants.js; canvas DOM = W*SCALE × H*SCALE = 640×512; single `ctx.setTransform(SCALE,0,0,SCALE,0,0)` at top of loop() upscales all draw paths. PAYMENT_ZONE coords now W/2,H/2. Sim and sprite hardcodes stay logical px. (commit 72dc083)
+- [x] [bug] rocks overlap and half-size after SCALE refactor — getRockTiles in src/world.js reverted to one rock per tile centered (pre-814a1bf form); half-tile-density was a TILE=64 workaround. (commit d413cfc)
+- [x] [bug] intro screen text drew in top-left — ctx.setTransform was placed after the intro early-return; moved to first statement of loop() so drawIntro path also gets SCALE. (commit d413cfc)
+- [x] [bug] intro text oversized for logical viewport — drawIntro in src/render.js: fonts halved (48/18/14 → 24/12/10) and y positions halved (140/230/262/360 → 70/115/131/180) to fit 320×256. (commit 32f88df)
+- [x] [refactor] remove dark ground patches in drawGround — deleted 5-entry patches array, the `rgba(0,0,0,0.08)` fillStyle line, and the ellipse loop. Ground is base fill + gridlines only. (commit 32f88df)
