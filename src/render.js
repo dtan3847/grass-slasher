@@ -42,14 +42,27 @@ export function updateParticles() {
   }
 }
 
+// splitmix32-style hash: one seed in, one u32 out, good avalanche
+function sm32(seed) {
+  let x = (seed + 0x9e3779b9) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x85ebca6b) >>> 0;
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+}
+
 export function drawGround() {
-  ctx.fillStyle = '#3a5e20';
-  ctx.fillRect(0, 0, W, H);
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const h = (((roomX * 73856093) ^ (roomY * 19349663) ^ (c * 83492791) ^ (r * 2971215073)) >>> 0) / 0xFFFFFFFF;
-      const bright = h > 0.5;
-      ctx.fillStyle = bright ? `rgba(255,255,255,${(h - 0.5) * 0.09})` : `rgba(0,0,0,${(0.5 - h) * 0.09})`;
+      // Three independent hash values per tile via successive splitmix outputs
+      const seed0 = sm32((roomX * 1000003) ^ (roomY * 999983) ^ (c * 1000033) ^ (r * 998243));
+      const h1 = sm32(seed0);
+      const h2 = sm32(h1);
+      const h3 = sm32(h2);
+      // Map each to [-1, 1], then scale to jitter range
+      const dH = ((h1 / 0xFFFFFFFF) * 2 - 1) * 3;   // ±3°
+      const dS = ((h2 / 0xFFFFFFFF) * 2 - 1) * 4;   // ±4%
+      const dL = ((h3 / 0xFFFFFFFF) * 2 - 1) * 3;   // ±3%
+      ctx.fillStyle = `hsl(${95 + dH},${49 + dS}%,${25 + dL}%)`;
       ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
     }
   }
