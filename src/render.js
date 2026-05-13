@@ -45,19 +45,6 @@ export function updateParticles() {
 export function drawGround() {
   ctx.fillStyle = '#3a5e20';
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = 'rgba(0,0,0,0.08)';
-  const patches = [
-    [80,  60,  120, 90],
-    [320, 200, 100, 80],
-    [500, 350, 130, 70],
-    [150, 380, 90,  60],
-    [440, 80,  110, 75],
-  ];
-  for (const [x, y, w, h] of patches) {
-    ctx.beginPath();
-    ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
   ctx.strokeStyle = 'rgba(0,0,0,0.07)';
   ctx.lineWidth   = 0.5;
   for (let x = 0; x <= W; x += TILE) {
@@ -357,17 +344,17 @@ export function drawIntro() {
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#7fff60';
-  ctx.font = 'bold 48px monospace';
-  ctx.fillText('GRASS SLASHER', W / 2, 140);
+  ctx.font = 'bold 24px monospace';
+  ctx.fillText('GRASS SLASHER', W / 2, 70);
 
   ctx.fillStyle = '#ccc';
-  ctx.font = '18px monospace';
-  ctx.fillText('You owe 500 gems to the Grass Baron.', W / 2, 230);
-  ctx.fillText('Slash grass. Collect gems. Repay your debt.', W / 2, 262);
+  ctx.font = '12px monospace';
+  ctx.fillText('You owe 500 gems to the Grass Baron.', W / 2, 115);
+  ctx.fillText('Slash grass. Collect gems. Repay your debt.', W / 2, 131);
 
   ctx.fillStyle = '#888';
-  ctx.font = '14px monospace';
-  ctx.fillText('Click or press any key to begin.', W / 2, 360);
+  ctx.font = '10px monospace';
+  ctx.fillText('Click or press any key to begin.', W / 2, 180);
 
   ctx.textAlign = 'left';
 }
