@@ -60,10 +60,10 @@ export function drawGround() {
   }
   ctx.strokeStyle = 'rgba(0,0,0,0.07)';
   ctx.lineWidth   = 0.5;
-  for (let x = 0; x <= W; x += 32) {
+  for (let x = 0; x <= W; x += TILE) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
-  for (let y = 0; y <= H; y += 32) {
+  for (let y = 0; y <= H; y += TILE) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 }
