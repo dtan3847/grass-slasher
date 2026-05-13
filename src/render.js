@@ -50,11 +50,11 @@ function sm32(seed) {
   return (x ^ (x >>> 16)) >>> 0;
 }
 
-export function drawGround() {
+export function drawGround(rx = roomX, ry = roomY) {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       // Three independent hash values per tile via successive splitmix outputs
-      const seed0 = sm32((roomX * 1000003) ^ (roomY * 999983) ^ (c * 1000033) ^ (r * 998243));
+      const seed0 = sm32((rx * 1000003) ^ (ry * 999983) ^ (c * 1000033) ^ (r * 998243));
       const h1 = sm32(seed0);
       const h2 = sm32(h1);
       const h3 = sm32(h2);
@@ -395,7 +395,7 @@ export function drawTransition() {
   // Old screen sliding out
   ctx.save();
   ctx.translate(ox - transition.oldCamX, oy - transition.oldCamY);
-  drawGround();
+  drawGround(transition.oldRX, transition.oldRY);
   drawRocks(transition.oldRocks);
   for (const g of transition.oldGrasses) drawGrass(g);
   drawGems();
@@ -404,7 +404,7 @@ export function drawTransition() {
   // New screen sliding in
   ctx.save();
   ctx.translate(nx - camera.x, ny - camera.y);
-  drawGround();
+  drawGround(transition.toRX, transition.toRY);
   drawRocks(getRockTiles(transition.toRX, transition.toRY));
   for (const g of grasses) drawGrass(g);
   drawPlayer(transition.playerEntryX, transition.playerEntryY);
