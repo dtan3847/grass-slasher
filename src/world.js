@@ -120,24 +120,19 @@ export function getLayout(rx, ry) { return ROOMS[`${rx},${ry}`]?.layout ?? []; }
 
 export function getRockTiles(rx, ry) {
   const adj = WORLD_MAP[`${rx},${ry}`] ?? {};
-  const step = TILE / 2;
-  const half = step / 2;
+  const half = TILE / 2;
   const tiles = [];
   if (adj.left === null) {
-    for (let i = 0; i * step + half < ROWS * TILE; i++)
-      tiles.push({ x: half, y: i * step + half });
+    for (let r = 0; r < ROWS; r++) tiles.push({ x: 0 * TILE + half, y: r * TILE + half });
   }
   if (adj.right === null) {
-    for (let i = 0; i * step + half < ROWS * TILE; i++)
-      tiles.push({ x: COLS * TILE - half, y: i * step + half });
+    for (let r = 0; r < ROWS; r++) tiles.push({ x: (COLS - 1) * TILE + half, y: r * TILE + half });
   }
   if (adj.up === null) {
-    for (let i = 0; i * step + half < COLS * TILE; i++)
-      tiles.push({ x: i * step + half, y: half });
+    for (let c = 0; c < COLS; c++) tiles.push({ x: c * TILE + half, y: 0 * TILE + half });
   }
   if (adj.down === null) {
-    for (let i = 0; i * step + half < COLS * TILE; i++)
-      tiles.push({ x: i * step + half, y: ROWS * TILE - half });
+    for (let c = 0; c < COLS; c++) tiles.push({ x: c * TILE + half, y: (ROWS - 1) * TILE + half });
   }
   return tiles;
 }

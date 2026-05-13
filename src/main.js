@@ -256,13 +256,13 @@ function updateUI() {
 }
 
 function loop() {
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   if (!introShown) {
     drawIntro();
     requestAnimationFrame(loop);
     return;
   }
   update();
-  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   if (transition.active) {
     drawTransition();
     drawFloats();
