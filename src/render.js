@@ -59,9 +59,9 @@ export function drawGround() {
       const h2 = sm32(h1);
       const h3 = sm32(h2);
       // Map each to [-1, 1], then scale to jitter range
-      const dH = ((h1 / 0xFFFFFFFF) * 2 - 1) * 3;   // ±3°
-      const dS = ((h2 / 0xFFFFFFFF) * 2 - 1) * 4;   // ±4%
-      const dL = ((h3 / 0xFFFFFFFF) * 2 - 1) * 3;   // ±3%
+      const dH = ((h1 / 0xFFFFFFFF) * 2 - 1) * 1.5;  // ±1.5°
+      const dS = ((h2 / 0xFFFFFFFF) * 2 - 1) * 2;   // ±2%
+      const dL = ((h3 / 0xFFFFFFFF) * 2 - 1) * 1.5; // ±1.5%
       ctx.fillStyle = `hsl(${95 + dH},${49 + dS}%,${25 + dL}%)`;
       ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
     }
