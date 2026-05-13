@@ -1,10 +1,10 @@
-import { ctx, W, H, TILE } from './constants.js';
+import { ctx, W, H, TILE, COLS, ROWS } from './constants.js';
 import { player, SLASH_ARCS, snapCardinal, getSlashHitbox } from './player.js';
 import { drawHitbox } from './hitbox.js';
 import { grasses } from './grass.js';
 import { gems } from './gems.js';
 import { upgrades } from './upgrades.js';
-import { transition, camera, getRockTiles, PAYMENT_ZONE } from './world.js';
+import { transition, camera, getRockTiles, PAYMENT_ZONE, roomX, roomY } from './world.js';
 
 export const particles = [];
 export const floats    = [];
@@ -45,6 +45,14 @@ export function updateParticles() {
 export function drawGround() {
   ctx.fillStyle = '#3a5e20';
   ctx.fillRect(0, 0, W, H);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const h = (((roomX * 73856093) ^ (roomY * 19349663) ^ (c * 83492791) ^ (r * 2971215073)) >>> 0) / 0xFFFFFFFF;
+      const bright = h > 0.5;
+      ctx.fillStyle = bright ? `rgba(255,255,255,${(h - 0.5) * 0.09})` : `rgba(0,0,0,${(0.5 - h) * 0.09})`;
+      ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
+    }
+  }
   ctx.strokeStyle = 'rgba(0,0,0,0.07)';
   ctx.lineWidth   = 0.5;
   for (let x = 0; x <= W; x += TILE) {
