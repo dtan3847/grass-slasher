@@ -1,7 +1,10 @@
 export const canvas = document.getElementById('game');
 export const ctx    = canvas.getContext('2d');
-export const W      = 640;
-export const H      = 480;
 export const TILE   = 32;
-export const COLS   = Math.floor(W / TILE);
-export const ROWS   = Math.floor(H / TILE);
+export const COLS   = 10;
+export const ROWS   = 8;
+export const W      = COLS * TILE;
+export const H      = ROWS * TILE;
+export const SCALE  = 2;
+canvas.width  = W * SCALE;
+canvas.height = H * SCALE;

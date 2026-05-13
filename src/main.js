@@ -1,4 +1,4 @@
-import { canvas, ctx, W, H } from './constants.js';
+import { canvas, ctx, W, H, SCALE } from './constants.js';
 import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, startRetract, snapCardinal, getSlashHitbox } from './player.js';
 import { grasses, initGrass, checkSlashHits, checkSlashCap, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
@@ -262,6 +262,7 @@ function loop() {
     return;
   }
   update();
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   if (transition.active) {
     drawTransition();
     drawFloats();

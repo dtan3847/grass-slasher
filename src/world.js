@@ -103,7 +103,7 @@ export const transition = {
   playerEntryX: 0, playerEntryY: 0,
 };
 
-export const PAYMENT_ZONE = { rx:1, ry:0, px:320, py:256, radius:40 };
+export const PAYMENT_ZONE = { rx:1, ry:0, px:W/2, py:H/2, radius:40 };
 
 export function getCurrentRoom() { return ROOMS[`${roomX},${roomY}`]; }
 
