@@ -6,6 +6,7 @@ import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
 import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY, PAYMENT_ZONE } from './world.js';
 import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn, drawJoystick } from './render.js';
+import { installTestHooks } from './test-hooks.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
@@ -230,6 +231,15 @@ function update() {
 
   updateParticles();
   updateGems(Math.max(1, Math.floor(Math.pow(1.5, upgrades.gemMult.level))));
+}
+
+if (new URLSearchParams(location.search).has('test')) {
+  installTestHooks({
+    tick: update,
+    skipIntro: () => { introShown = true; },
+    getFrameCount: () => frameCount,
+    getGameWon: () => gameWon,
+  });
 }
 
 function updateUI() {

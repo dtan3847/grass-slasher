@@ -5,9 +5,14 @@
     "start": "node scripts/dev.js",
     "dev": "npx esbuild src/main.js --bundle --outfile=bundle.js --watch",
     "build": "npx esbuild src/main.js --bundle --outfile=bundle.js",
-    "editor": "node editor/server.js"
+    "editor": "node editor/server.js",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
   },
   "devDependencies": {
-    "esbuild": "latest"
+    "esbuild": "latest",
+    "@playwright/test": "^1.48.0",
+    "http-server": "^14.1.1"
   }
 }
