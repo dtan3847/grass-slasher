@@ -2,6 +2,7 @@
   "name": "grass-slasher",
   "version": "1.0.0",
   "scripts": {
+    "start": "node scripts/dev.js",
     "dev": "npx esbuild src/main.js --bundle --outfile=bundle.js --watch",
     "build": "npx esbuild src/main.js --bundle --outfile=bundle.js",
     "editor": "node editor/server.js"
