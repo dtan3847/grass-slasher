@@ -22,6 +22,16 @@ export let gameWon = false;
 
 const keys = {};
 
+const JOYSTICK_DEADZONE = 16;
+let joystick = null; // { identifier, anchorX, anchorY }
+
+function clearMovementKeys() {
+  keys['KeyW'] = false;
+  keys['KeyA'] = false;
+  keys['KeyS'] = false;
+  keys['KeyD'] = false;
+}
+
 function blockedAt(nx, ny) {
   const halfSum = 7 + 11;
   for (const g of grasses) {
@@ -364,6 +374,81 @@ canvas.addEventListener('click', e => {
   trySlash();
   logSlash();
 });
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const midX = rect.width / 2;
+
+  for (const touch of e.changedTouches) {
+    const tx = touch.clientX - rect.left;
+    const ty = touch.clientY - rect.top;
+
+    if (tx < midX) {
+      // Left half: joystick
+      if (!introShown) { introShown = true; continue; }
+      if (joystick === null) {
+        joystick = { identifier: touch.identifier, anchorX: tx, anchorY: ty };
+        clearMovementKeys();
+      }
+    } else {
+      // Right half: slash
+      if (!introShown) { introShown = true; continue; }
+      if (gameWon) continue;
+      trySlash();
+      logSlash();
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (joystick === null) return;
+  const rect = canvas.getBoundingClientRect();
+
+  for (const touch of e.changedTouches) {
+    if (touch.identifier !== joystick.identifier) continue;
+    const dx = (touch.clientX - rect.left) - joystick.anchorX;
+    const dy = (touch.clientY - rect.top)  - joystick.anchorY;
+
+    if (Math.hypot(dx, dy) < JOYSTICK_DEADZONE) {
+      clearMovementKeys();
+    } else {
+      // 8-way snap: round angle to nearest 45° sector
+      // Math.atan2 returns [-PI, PI]; Math.round maps to {-4,-3,-2,-1,0,1,2,3,4}
+      // sector 0=right, 1=down-right, 2=down, 3=down-left, 4/-4=left, -3=up-left, -2=up, -1=up-right
+      const sector = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));
+      keys['KeyD'] = sector === 0  || sector === 1  || sector === -1;
+      keys['KeyS'] = sector === 1  || sector === 2  || sector === 3;
+      keys['KeyA'] = sector === -4 || sector === -3 || sector === 3 || sector === 4;
+      keys['KeyW'] = sector === -3 || sector === -2 || sector === -1;
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  if (joystick === null) return;
+  for (const touch of e.changedTouches) {
+    if (touch.identifier === joystick.identifier) {
+      clearMovementKeys();
+      joystick = null;
+      break;
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', e => {
+  e.preventDefault();
+  if (joystick === null) return;
+  for (const touch of e.changedTouches) {
+    if (touch.identifier === joystick.identifier) {
+      clearMovementKeys();
+      joystick = null;
+      break;
+    }
+  }
+}, { passive: false });
 
 initGrass();
 loop();
