@@ -26,6 +26,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && req.url === '/src/sprites.js') {
+    const spritesPath = path.join(__dirname, '..', 'src', 'sprites.js');
+    fs.readFile(spritesPath, (err, data) => {
+      if (err) { res.writeHead(500); res.end('Internal error'); return; }
+      res.writeHead(200, { 'Content-Type': 'application/javascript' });
+      res.end(data);
+    });
+    return;
+  }
+
   if (req.method === 'POST' && req.url === '/save') {
     let body = '';
     req.on('data', chunk => { body += chunk; });

@@ -23,7 +23,6 @@
     #world-container h2 { font-size: 13px; margin-bottom: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
     #world-grid {
       display: grid;
-      /* 3 room cols + 2 connector cols, 3 room rows + 2 connector rows */
       grid-template-columns: 72px 14px 72px 14px 72px;
       grid-template-rows: 56px 14px 56px 14px 56px;
       gap: 0;
@@ -44,12 +43,10 @@
     .room-cell:hover { border-color: #888; }
     .room-cell.selected { border-color: #3a7bd5; color: #fff; background: #253550; }
 
-    .h-connector { /* horizontal strip between left-right neighbors */
+    .h-connector {
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      border-radius: 2px;
     }
     .h-connector-inner {
       width: 10px;
@@ -57,15 +54,11 @@
       border-radius: 2px;
       background: #444;
     }
-    .h-connector-inner.open { background: #3c9e3c; }
-    .h-connector:hover .h-connector-inner { opacity: 0.75; }
 
-    .v-connector { /* vertical strip between top-bottom neighbors */
+    .v-connector {
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      border-radius: 2px;
     }
     .v-connector-inner {
       width: 30px;
@@ -73,10 +66,13 @@
       border-radius: 2px;
       background: #444;
     }
-    .v-connector-inner.open { background: #3c9e3c; }
-    .v-connector:hover .v-connector-inner { opacity: 0.75; }
 
-    .grid-spacer { /* dead corner cells */ }
+    .grid-spacer { }
+
+    /* Paint mode selector */
+    #paint-mode { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12px; color: #aaa; }
+    #paint-mode label { display: flex; align-items: center; gap: 4px; cursor: pointer; color: #ccc; }
+    #paint-mode input[type="radio"] { cursor: pointer; }
 
     /* Tile grid */
     #tile-container { flex-shrink: 0; }
@@ -84,18 +80,24 @@
     #room-label { font-size: 11px; color: #888; margin-bottom: 6px; }
     #tile-grid {
       display: grid;
-      grid-template-columns: repeat(10, 32px);
-      grid-template-rows: repeat(8, 32px);
+      grid-template-columns: repeat(10, 34px);
+      grid-template-rows: repeat(8, 34px);
       gap: 2px;
     }
     .tile-cell {
-      background: #2a2a2a;
+      position: relative;
+      cursor: pointer;
       border: 1px solid #3a3a3a;
       border-radius: 2px;
-      cursor: pointer;
-      transition: background 0.08s;
+      overflow: hidden;
+      width: 34px;
+      height: 34px;
     }
-    .tile-cell.grass { background: #3c8c3c; border-color: #4aaf4a; }
+    .tile-cell canvas {
+      display: block;
+      width: 34px;
+      height: 34px;
+    }
     .tile-cell:hover { opacity: 0.75; }
   </style>
 </head>
@@ -113,17 +115,30 @@
     <div id="tile-container">
       <h2>Room Tiles</h2>
       <div id="room-label"></div>
+      <div id="paint-mode">
+        Paint:
+        <label><input type="radio" name="paint" value="empty"> Empty</label>
+        <label><input type="radio" name="paint" value="grass" checked> Grass</label>
+        <label><input type="radio" name="paint" value="rock"> Rock</label>
+      </div>
       <div id="tile-grid"></div>
     </div>
   </div>
 
-  <script>
-    let state = null;      // { rooms, worldMap }
+  <script type="module">
+    import { paintShrub, paintRock } from '/src/sprites.js';
+
+    let state = null;
     let selectedRoom = '1,2';
     let dirty = false;
+    let paintMode = 'grass';
 
     const saveBtn = document.getElementById('save-btn');
     const statusEl = document.getElementById('status');
+
+    document.querySelectorAll('input[name="paint"]').forEach(radio => {
+      radio.addEventListener('change', e => { paintMode = e.target.value; });
+    });
 
     function setStatus(msg, cls) {
       statusEl.textContent = msg;
@@ -132,27 +147,11 @@
 
     function markDirty() {
       dirty = true;
+      saveBtn.disabled = false;
       setStatus('unsaved changes', 'dirty');
     }
 
     // ── World grid ────────────────────────────────────────────────────────────
-
-    // Grid layout maps (roomX, roomY) to CSS grid positions (1-based col, row).
-    // Room at (rx, ry) occupies grid-col 2*rx+1, grid-row 2*ry+1.
-    // H-connector between (rx,ry) and (rx+1,ry): grid-col 2*rx+2, grid-row 2*ry+1.
-    // V-connector between (rx,ry) and (rx,ry+1): grid-col 2*rx+1, grid-row 2*ry+2.
-    // Corner spacers: even col + even row.
-
-    function isOpen(ax, ay, bx, by) {
-      if (!state) return false;
-      // worldMap removed from data model; internal 3x3 borders are always open.
-      // Treat strip as open iff both rooms exist.
-      return !!(state.rooms[`${ax},${ay}`] && state.rooms[`${bx},${by}`]);
-    }
-
-    function toggleConnection() {
-      // No-op: worldMap removed. Connection editing handled by rock placement (future).
-    }
 
     function renderWorldGrid() {
       const grid = document.getElementById('world-grid');
@@ -164,11 +163,10 @@
           el.style.gridColumn = gridCol;
           el.style.gridRow = gridRow;
 
-          const isRoomCol = (gridCol % 2 === 1); // 1,3,5
-          const isRoomRow = (gridRow % 2 === 1); // 1,3,5
+          const isRoomCol = (gridCol % 2 === 1);
+          const isRoomRow = (gridRow % 2 === 1);
 
           if (isRoomCol && isRoomRow) {
-            // Room cell
             const rx = (gridCol - 1) / 2;
             const ry = (gridRow - 1) / 2;
             const key = `${rx},${ry}`;
@@ -180,25 +178,12 @@
               renderTileGrid();
             });
           } else if (!isRoomCol && isRoomRow) {
-            // Horizontal connector between (rx,ry) and (rx+1,ry)
-            const rx = (gridCol - 2) / 2;  // left room x
-            const ry = (gridRow - 1) / 2;
-            const open = isOpen(rx, ry, rx + 1, ry);
             el.className = 'h-connector';
-            el.innerHTML = `<div class="h-connector-inner${open ? ' open' : ''}"></div>`;
-            el.title = open ? 'Click to wall off' : 'Click to open';
-            el.addEventListener('click', () => toggleConnection(rx, ry, rx + 1, ry));
+            el.innerHTML = `<div class="h-connector-inner"></div>`;
           } else if (isRoomCol && !isRoomRow) {
-            // Vertical connector between (rx,ry) and (rx,ry+1)
-            const rx = (gridCol - 1) / 2;
-            const ry = (gridRow - 2) / 2;  // top room y
-            const open = isOpen(rx, ry, rx, ry + 1);
             el.className = 'v-connector';
-            el.innerHTML = `<div class="v-connector-inner${open ? ' open' : ''}"></div>`;
-            el.title = open ? 'Click to wall off' : 'Click to open';
-            el.addEventListener('click', () => toggleConnection(rx, ry, rx, ry + 1));
+            el.innerHTML = `<div class="v-connector-inner"></div>`;
           } else {
-            // Dead corner spacer
             el.className = 'grid-spacer';
           }
 
@@ -207,20 +192,62 @@
       }
     }
 
+    // ── Sprite helpers ────────────────────────────────────────────────────────
+
+    const CELL_PX = 34;
+
+    function makeTileCanvas(type) {
+      const c = document.createElement('canvas');
+      c.width  = CELL_PX;
+      c.height = CELL_PX;
+      const ctx = c.getContext('2d');
+      const cx = CELL_PX / 2;
+      const cy = CELL_PX / 2;
+
+      if (type === 'empty') {
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(0, 0, CELL_PX, CELL_PX);
+      } else if (type === 'grass') {
+        ctx.fillStyle = '#2a4a2a';
+        ctx.fillRect(0, 0, CELL_PX, CELL_PX);
+        paintShrub(ctx, cx, cy, 110, false, 0.72);
+      } else if (type === 'rock') {
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, 0, CELL_PX, CELL_PX);
+        paintRock(ctx, cx, cy);
+      }
+
+      return c;
+    }
+
     // ── Tile grid ─────────────────────────────────────────────────────────────
 
     function hasGrass(layout, col, row) {
       return layout.some(e => e.col === col && e.row === row);
     }
 
-    function toggleTile(col, row) {
+    function hasRock(rocks, col, row) {
+      return rocks.some(e => e.col === col && e.row === row);
+    }
+
+    function paintTile(col, row) {
       const room = state.rooms[selectedRoom];
-      const idx = room.layout.findIndex(e => e.col === col && e.row === row);
-      if (idx >= 0) {
-        room.layout.splice(idx, 1);
-      } else {
+
+      // Remove from both arrays first
+      const grassIdx = room.layout.findIndex(e => e.col === col && e.row === row);
+      if (grassIdx >= 0) room.layout.splice(grassIdx, 1);
+
+      const rockIdx = room.rocks.findIndex(e => e.col === col && e.row === row);
+      if (rockIdx >= 0) room.rocks.splice(rockIdx, 1);
+
+      // Add to the right array
+      if (paintMode === 'grass') {
         room.layout.push({ col, row });
+      } else if (paintMode === 'rock') {
+        room.rocks.push({ col, row });
       }
+      // 'empty' — already removed above, nothing to add
+
       markDirty();
       renderTileGrid();
     }
@@ -237,12 +264,20 @@
         return;
       }
 
+      const rocks = room.rocks ?? [];
+
       for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 10; c++) {
           const el = document.createElement('div');
-          el.className = 'tile-cell' + (hasGrass(room.layout, c, r) ? ' grass' : '');
+          el.className = 'tile-cell';
           el.title = `col ${c}, row ${r}`;
-          el.addEventListener('click', () => toggleTile(c, r));
+
+          let type = 'empty';
+          if (hasRock(rocks, c, r))          type = 'rock';
+          else if (hasGrass(room.layout, c, r)) type = 'grass';
+
+          el.appendChild(makeTileCanvas(type));
+          el.addEventListener('click', () => paintTile(c, r));
           grid.appendChild(el);
         }
       }

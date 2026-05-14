@@ -4,7 +4,7 @@ import { upgrades } from './upgrades.js';
 import { testPoint } from './hitbox.js';
 import { spawnGem, TIER_WEIGHTS } from './gems.js';
 import { addCutParticles } from './render.js';
-import { getLayout } from './world.js';
+import { getLayout, roomX, roomY } from './world.js';
 
 export const grasses = [];
 export const occupiedCells = new Set();
@@ -29,7 +29,7 @@ export function loadRoom(rx, ry) {
   }
 }
 
-export function initGrass() { loadRoom(0, 2); }
+export function initGrass() { loadRoom(roomX, roomY); }
 
 export function checkSlashHits(sweepAngle, recordTarget) {
   const wedgePart = getSlashHitbox(player.slashCardinal)[0];
