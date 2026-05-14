@@ -14,6 +14,8 @@ States: `[ ]` open → `[~]` built/unverified → move to `DONE.md` when verifie
 
 ## Open
 
+- [ ] [bug] player stuck after screen transition if rock at entry tile — symptom: walking through screen edge into next room, player can't move after arrival. diagnosis: `repositionPlayer` (`src/main.js` ~line 90) and `startTransition` set player to `EDGE+1` / `roomPxH-EDGE-1` etc on the entry side, with no collision check. If a rock occupies that tile, player spawns inside the rock; `blockedAt` then blocks every direction that doesn't escape the overlap → stuck. fix options: (a) after warp, scan along the entry edge (perpendicular to travel direction) for nearest unblocked tile center and snap player there; (b) bump player inward past `EDGE+1` until `blockedAt` returns false; (c) editor-side: warn/forbid rocks on the 4 edge rows/cols facing a connected neighbor. (a) is minimal and runtime-safe. Files: `src/main.js`. (priority: low)
+
 - [ ] [bug] player sprite/shadow renders over bottom rocks — symptom: player drawn on top of rock sprites at room edges, looks like walking on rocks. diagnosis (pre-existing): `blockedAt` in `src/main.js` uses `halfSum = 7 + 11 = 18` for both grass and rocks; rock sprite radius is ~13 logical px and player visible extent reaches ~14 below center, so collision stops player only after sprites already visually overlap. fix: separate rock collision from grass — in `blockedAt`, use `halfSum = 18` for grasses but `halfSum = 25` (= ~12 player + ~13 rock) for rocks. Or alternatively introduce named constants `PLAYER_HALF = 11`, `GRASS_HALF = 7`, `ROCK_HALF = 13` for clarity. (priority: low)
 
 - [ ] [bug] auto-slash blocks E key pay-debt — symptom: pressing E near payment zone does nothing when auto-slash is active. diagnosis: E keydown handler (src/main.js line 322) gates on `player.slashState === 'idle'`; auto-slash keeps state in sweeping/retracting continuously so check never passes. fix: remove `player.slashState === 'idle'` from the E condition — debt payment has no slash-state dependency. src/main.js only. (priority: low)
@@ -22,22 +24,7 @@ States: `[ ]` open → `[~]` built/unverified → move to `DONE.md` when verifie
 
 - [ ] [ux] hide auto-slash toggle until auto-slash is purchased — toggle button `btn-autoslash-toggle` always visible even at level 0. Fix: in `updateUI()` (`src/main.js` ~line 248), add `toggleBtn.style.display = upgrades.autoSlash.level > 0 ? '' : 'none';`. Also set `style="display:none"` on the button in `index.html` as initial state. Files: `src/main.js`, `index.html`. (priority: med)
 
-- [ ] [refactor] rocks as data, delete worldMap — replace border-auto-rocks (currently in `getRockTiles` based on `worldMap[…] === null`) with explicit rock data per room. Also fixes [bug] grass placed on border tile invisible because auto-rock draws on top.
-  - Data: add `"rocks": [{col,row}, ...]` array to each room in `src/world-data.json` alongside `layout`. Backfill: for each existing room, compute current `getRockTiles` output (every border cell where the room's worldMap entry is null) and write those as rock tiles. Then remove the `worldMap` top-level key entirely.
-  - `src/world.js`: delete `worldMap` references, `getNeighbor`, `getRockTiles` border-derivation. New `getNeighbor(dir)` returns the adjacent room if it exists in `worldData.rooms` else null (uses room coords + bounds, not adjacency table). New `getRockTiles(rx,ry)` returns the room's `rocks` array translated to pixel centers (`{x: col*TILE+TILE/2, y: row*TILE+TILE/2}`).
-  - `src/main.js` `blockedAt`: rocks (explicit data) + outer-world wall (block movement when adjacent tile would step into a room coord outside 0..2). Inner borders fully open if no rock placed.
-  - Verify: all 9 rooms render identically to current game (rocks at original positions), player can walk through any internal border that had a worldMap connection, outer 3x3 perimeter still blocks. Grass placed on border tile (post-editor edit) now visible.
-  - Files: `src/world-data.json`, `src/world.js`, `src/main.js`. (priority: med)
-
 - [ ] [feature] editor click-and-drag paint — mousedown on tile sets paint state from that tile's current value (toggle target = opposite of clicked tile, or for paint-mode UI = currently-selected mode), mousemove while held paints every tile entered with same target. Mouseup ends stroke. Single source of truth: stroke decides target on mousedown, all subsequent tiles in stroke set to that target (no per-tile toggling — prevents flicker when dragging back over). Files: `editor/index.html`. Standalone — can ship before or after rocks refactor; if shipped after, applies to all 3 paint modes. (priority: med)
-
-- [ ] [feature] editor rocks paint + real sprites — depends on rocks-as-data refactor above. Update `editor/index.html` UI:
-  - Paint mode selector above tile grid: radio buttons `Empty` / `Grass` / `Rock`. Click on tile paints selected type (replaces existing). Optional drag-to-paint.
-  - Tile rendering: use actual game sprites via `drawShrub` and rock draw routine from `src/render.js`. Each tile = small canvas, paint sprite at center scaled for cell size.
-  - Reuse blocker: `src/constants.js` line 1-2 creates `ctx` from `document.getElementById('game')` at module load — crashes if imported in editor (no `#game` element). Dev resolves by either (a) refactoring `drawShrub`/rock draw to take `ctx` as first param and exporting them, or (b) extracting pure `paintShrub(ctx, x, y, hue, flip, scale)` + `paintRock(ctx, x, y)` into a new `src/sprites.js` that has no DOM coupling and is imported by both render.js and editor. Dev's call; option (b) keeps blast radius smaller.
-  - Remove connection-toggle strips from world grid (always open now). Keep room cells + selection highlight.
-  - Files: `editor/index.html`, plus whichever src/ file dev picks for sprite extraction. (priority: med)
-
 
 - [ ] [ux] sprite facing direction — up and down look same; fix: when facing up (sin(facing) < -0.5) draw back of head (hat from behind, no eyes, hair bump visible). Separately: make head and eyes bigger, anime style, for all directions. Left/right already distinct via eye x-offset. (priority: low)
 - [ ] [ux] differentiate repeatable vs one-time upgrades visually in shop. (priority: low)
