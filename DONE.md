@@ -1,5 +1,6 @@
 # Grass Slasher — Completed Items
 
+- [x] [feature] single `npm start` runs editor + esbuild watch — `scripts/dev.js` spawns both with `stdio:'inherit'`, kills subtrees via `taskkill /T /F` on win32 / `process.kill(-pid)` elsewhere; `killing` flag guards re-entry. `package.json` gains `"start"`.
 - [x] tile-based hitbox
 - [x] arc sweep cardinal→cardinal
 - [x] retract cancellable by new slash
