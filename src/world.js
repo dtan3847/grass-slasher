@@ -25,7 +25,10 @@ export const PAYMENT_ZONE = { rx:1, ry:0, px:W/2, py:H/2, radius:40 };
 export function getCurrentRoom() { return worldData.rooms[`${roomX},${roomY}`]; }
 
 export function getNeighbor(dir) {
-  return (worldData.worldMap[`${roomX},${roomY}`] ?? {})[dir] ?? null;
+  const dx = dir === 'right' ? 1 : dir === 'left' ? -1 : 0;
+  const dy = dir === 'down'  ? 1 : dir === 'up'   ? -1 : 0;
+  const nx = roomX + dx, ny = roomY + dy;
+  return worldData.rooms[`${nx},${ny}`] ? [nx, ny] : null;
 }
 
 export function getRoomPixelSize(rx, ry) {
@@ -36,22 +39,9 @@ export function getRoomPixelSize(rx, ry) {
 export function getLayout(rx, ry) { return worldData.rooms[`${rx},${ry}`]?.layout ?? []; }
 
 export function getRockTiles(rx, ry) {
-  const adj = worldData.worldMap[`${rx},${ry}`] ?? {};
   const half = TILE / 2;
-  const tiles = [];
-  if (adj.left === null) {
-    for (let r = 0; r < ROWS; r++) tiles.push({ x: 0 * TILE + half, y: r * TILE + half });
-  }
-  if (adj.right === null) {
-    for (let r = 0; r < ROWS; r++) tiles.push({ x: (COLS - 1) * TILE + half, y: r * TILE + half });
-  }
-  if (adj.up === null) {
-    for (let c = 0; c < COLS; c++) tiles.push({ x: c * TILE + half, y: 0 * TILE + half });
-  }
-  if (adj.down === null) {
-    for (let c = 0; c < COLS; c++) tiles.push({ x: c * TILE + half, y: (ROWS - 1) * TILE + half });
-  }
-  return tiles;
+  const rocks = worldData.rooms[`${rx},${ry}`]?.rocks ?? [];
+  return rocks.map(({col, row}) => ({ x: col * TILE + half, y: row * TILE + half }));
 }
 
 export function triggerTransition(dir, oldGrassesSnapshot) {

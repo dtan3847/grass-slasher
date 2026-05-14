@@ -145,37 +145,13 @@
 
     function isOpen(ax, ay, bx, by) {
       if (!state) return false;
-      const aKey = `${ax},${ay}`;
-      const bKey = `${bx},${by}`;
-      const aMap = state.worldMap[aKey];
-      const bMap = state.worldMap[bKey];
-      if (!aMap || !bMap) return false;
-      // A is left of B → check A.right and B.left
-      if (bx === ax + 1 && by === ay) {
-        return Array.isArray(aMap.right) && Array.isArray(bMap.left);
-      }
-      // A is above B → check A.down and B.up
-      if (by === ay + 1 && bx === ax) {
-        return Array.isArray(aMap.down) && Array.isArray(bMap.up);
-      }
-      return false;
+      // worldMap removed from data model; internal 3x3 borders are always open.
+      // Treat strip as open iff both rooms exist.
+      return !!(state.rooms[`${ax},${ay}`] && state.rooms[`${bx},${by}`]);
     }
 
-    function toggleConnection(ax, ay, bx, by) {
-      const aKey = `${ax},${ay}`;
-      const bKey = `${bx},${by}`;
-      const open = isOpen(ax, ay, bx, by);
-      if (bx === ax + 1 && by === ay) {
-        // horizontal: A.right ↔ B.left
-        state.worldMap[aKey].right = open ? null : [bx, by];
-        state.worldMap[bKey].left  = open ? null : [ax, ay];
-      } else if (by === ay + 1 && bx === ax) {
-        // vertical: A.down ↔ B.up
-        state.worldMap[aKey].down = open ? null : [bx, by];
-        state.worldMap[bKey].up   = open ? null : [ax, ay];
-      }
-      markDirty();
-      renderWorldGrid();
+    function toggleConnection() {
+      // No-op: worldMap removed. Connection editing handled by rock placement (future).
     }
 
     function renderWorldGrid() {
