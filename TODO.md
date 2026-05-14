@@ -32,6 +32,8 @@ States: `[ ]` open → `[~]` built/unverified → move to `DONE.md` when verifie
 
 - [ ] [bug] partial debt payment allowed — symptom: pressing E with fewer gems than debt pays partial amount. diagnosis: `src/main.js` line 327 calls `payDebt(gemCount)`; `payDebt` (src/debt.js:6-12) clamps to `Math.min(amount, gemCount, debtRemaining)` and applies any positive amount. No gameplay benefit to partial payment since only full clearance triggers win. fix: gate E handler on `gemCount >= debtRemaining` — same place that already checks `inPaymentRoom` + `nearZone` (src/main.js ~line 324-328). If not enough gems, no-op (or optional: brief float text "Need N more gems" — leave to dev's judgment, OK to omit). Files: `src/main.js`. (priority: med)
 
+- [ ] [feature] deploy to GH Pages + itch.io — see `plans/deploy-hosting.md` for full spec. Single GitHub Actions workflow on push to `master`: build with `npm run build`, deploy `index.html` + `bundle.js` to GH Pages via `actions/deploy-pages@v4` and to itch.io via butler. `bundle.js` stays gitignored (CI builds fresh). Requires one-time manual setup: enable Pages "from Actions", create itch.io project, add `BUTLER_API_KEY` secret + `ITCH_TARGET` repo var. New file: `.github/workflows/deploy.yml`. No source changes. (priority: med)
+
 ## Known intentional quirks (do not fix)
 
 - slash-during-room-transition allowed by design — feels fine, kept as unintended feature
