@@ -359,6 +359,23 @@ export function drawWinScreen(gameWon) {
   ctx.textAlign = 'left';
 }
 
+export function drawJoystick(j) {
+  if (!j) return;
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(j.anchorX, j.anchorY, 28, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.arc(j.thumbX, j.thumbY, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 export function drawIntro() {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);

@@ -5,7 +5,7 @@ import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
 import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY, PAYMENT_ZONE } from './world.js';
-import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn } from './render.js';
+import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn, drawJoystick } from './render.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
@@ -22,15 +22,11 @@ export let gameWon = false;
 
 const keys = {};
 
-const JOYSTICK_DEADZONE = 16;
-let joystick = null; // { identifier, anchorX, anchorY }
-
-function clearMovementKeys() {
-  keys['KeyW'] = false;
-  keys['KeyA'] = false;
-  keys['KeyS'] = false;
-  keys['KeyD'] = false;
-}
+const JOYSTICK_DEADZONE = 10; // logical px
+const JOYSTICK_RADIUS   = 28; // logical px — matches visual ring radius
+let joystick = null;
+// when active: { identifier, anchorX, anchorY, thumbX, thumbY, dirX, dirY, magnitude }
+// all coords in logical px. dirX/dirY = unit vector when magnitude >= DEADZONE, else (0,0).
 
 function blockedAt(nx, ny) {
   const halfSum = 7 + 11;
@@ -125,10 +121,15 @@ function update() {
 
   if (!gameWon) {
     let dx = 0, dy = 0;
-    if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
-    if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
-    if (keys['ArrowUp']    || keys['KeyW']) dy -= 1;
-    if (keys['ArrowDown']  || keys['KeyS']) dy += 1;
+    if (joystick && (joystick.dirX !== 0 || joystick.dirY !== 0)) {
+      dx = joystick.dirX;
+      dy = joystick.dirY;
+    } else {
+      if (keys['ArrowLeft']  || keys['KeyA']) dx -= 1;
+      if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
+      if (keys['ArrowUp']    || keys['KeyW']) dy -= 1;
+      if (keys['ArrowDown']  || keys['KeyS']) dy += 1;
+    }
 
     if (dx !== 0 || dy !== 0) {
       const len = Math.hypot(dx, dy);
@@ -289,6 +290,7 @@ function loop() {
     drawParticles();
     drawFloats();
     ctx.restore();
+    drawJoystick(joystick);
     drawDebugButton(debugMode, grassSpawnEnabled);
   }
   drawWinScreen(gameWon);
@@ -378,18 +380,21 @@ canvas.addEventListener('click', e => {
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
   const midX = rect.width / 2;
 
   for (const touch of e.changedTouches) {
-    const tx = touch.clientX - rect.left;
-    const ty = touch.clientY - rect.top;
+    const rawX = touch.clientX - rect.left;
+    const rawY = touch.clientY - rect.top;
 
-    if (tx < midX) {
+    if (rawX < midX) {
       // Left half: joystick
       if (!introShown) { introShown = true; continue; }
       if (joystick === null) {
-        joystick = { identifier: touch.identifier, anchorX: tx, anchorY: ty };
-        clearMovementKeys();
+        const ax = rawX * scaleX;
+        const ay = rawY * scaleY;
+        joystick = { identifier: touch.identifier, anchorX: ax, anchorY: ay, thumbX: ax, thumbY: ay, dirX: 0, dirY: 0, magnitude: 0 };
       }
     } else {
       // Right half: slash
@@ -405,23 +410,32 @@ canvas.addEventListener('touchmove', e => {
   e.preventDefault();
   if (joystick === null) return;
   const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
 
   for (const touch of e.changedTouches) {
     if (touch.identifier !== joystick.identifier) continue;
-    const dx = (touch.clientX - rect.left) - joystick.anchorX;
-    const dy = (touch.clientY - rect.top)  - joystick.anchorY;
-
-    if (Math.hypot(dx, dy) < JOYSTICK_DEADZONE) {
-      clearMovementKeys();
+    const tx = (touch.clientX - rect.left) * scaleX;
+    const ty = (touch.clientY - rect.top)  * scaleY;
+    const dx = tx - joystick.anchorX;
+    const dy = ty - joystick.anchorY;
+    const mag = Math.hypot(dx, dy);
+    joystick.magnitude = mag;
+    if (mag < JOYSTICK_DEADZONE) {
+      joystick.dirX = 0;
+      joystick.dirY = 0;
+      joystick.thumbX = joystick.anchorX + dx;
+      joystick.thumbY = joystick.anchorY + dy;
     } else {
-      // 8-way snap: round angle to nearest 45° sector
-      // Math.atan2 returns [-PI, PI]; Math.round maps to {-4,-3,-2,-1,0,1,2,3,4}
-      // sector 0=right, 1=down-right, 2=down, 3=down-left, 4/-4=left, -3=up-left, -2=up, -1=up-right
-      const sector = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));
-      keys['KeyD'] = sector === 0  || sector === 1  || sector === -1;
-      keys['KeyS'] = sector === 1  || sector === 2  || sector === 3;
-      keys['KeyA'] = sector === -4 || sector === -3 || sector === 3 || sector === 4;
-      keys['KeyW'] = sector === -3 || sector === -2 || sector === -1;
+      joystick.dirX = dx / mag;
+      joystick.dirY = dy / mag;
+      if (mag > JOYSTICK_RADIUS) {
+        joystick.thumbX = joystick.anchorX + joystick.dirX * JOYSTICK_RADIUS;
+        joystick.thumbY = joystick.anchorY + joystick.dirY * JOYSTICK_RADIUS;
+      } else {
+        joystick.thumbX = tx;
+        joystick.thumbY = ty;
+      }
     }
   }
 }, { passive: false });
@@ -431,7 +445,6 @@ canvas.addEventListener('touchend', e => {
   if (joystick === null) return;
   for (const touch of e.changedTouches) {
     if (touch.identifier === joystick.identifier) {
-      clearMovementKeys();
       joystick = null;
       break;
     }
@@ -443,7 +456,6 @@ canvas.addEventListener('touchcancel', e => {
   if (joystick === null) return;
   for (const touch of e.changedTouches) {
     if (touch.identifier === joystick.identifier) {
-      clearMovementKeys();
       joystick = null;
       break;
     }
