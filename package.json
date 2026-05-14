@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npx esbuild src/main.js --bundle --outfile=bundle.js --watch",
-    "build": "npx esbuild src/main.js --bundle --outfile=bundle.js"
+    "build": "npx esbuild src/main.js --bundle --outfile=bundle.js",
+    "editor": "node editor/server.js"
   },
   "devDependencies": {
     "esbuild": "latest"

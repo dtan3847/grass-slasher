@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grass Slasher — Map Editor</title>
+</head>
+<body>
+  <h1>Map Editor</h1>
+  <p id="status">Phase 2 stub. UI in phase 3.</p>
+  <button id="test-save">Test Save (round-trip)</button>
+
+  <script>
+    const status = document.getElementById('status');
+    const btn = document.getElementById('test-save');
+
+    let worldData = null;
+
+    fetch('/world-data.json')
+      .then(r => r.json())
+      .then(data => {
+        worldData = data;
+        const roomCount = Object.keys(data.rooms || {}).length;
+        const msg = 'Loaded ' + roomCount + ' rooms';
+        status.textContent = msg;
+        console.log(msg);
+      })
+      .catch(err => {
+        status.textContent = 'Load failed: ' + err.message;
+        console.error(err);
+      });
+
+    btn.addEventListener('click', () => {
+      if (!worldData) { status.textContent = 'No data loaded yet'; return; }
+      fetch('/world-data.json')
+        .then(r => r.json())
+        .then(data => fetch('/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }))
+        .then(r => r.json())
+        .then(result => {
+          status.textContent = result.ok ? 'Saved OK' : ('Save failed: ' + result.error);
+        })
+        .catch(err => {
+          status.textContent = 'Save error: ' + err.message;
+        });
+    });
+  </script>
+</body>
+</html>
