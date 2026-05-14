@@ -4,49 +4,315 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Grass Slasher — Map Editor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; font-size: 13px; background: #1a1a1a; color: #ddd; padding: 16px; }
+    h1 { font-size: 16px; margin-bottom: 10px; color: #fff; }
+    #toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    #save-btn { padding: 5px 14px; background: #3a7bd5; color: #fff; border: none; border-radius: 3px; cursor: pointer; font-family: monospace; font-size: 13px; }
+    #save-btn:hover { background: #2f68ba; }
+    #save-btn:disabled { background: #555; cursor: not-allowed; }
+    #status { color: #aaa; }
+    #status.dirty { color: #f0c040; }
+    #status.ok { color: #5cd65c; }
+    #status.error { color: #e05555; }
+    #panels { display: flex; gap: 28px; align-items: flex-start; }
+
+    /* World grid */
+    #world-container { flex-shrink: 0; }
+    #world-container h2 { font-size: 13px; margin-bottom: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    #world-grid {
+      display: grid;
+      /* 3 room cols + 2 connector cols, 3 room rows + 2 connector rows */
+      grid-template-columns: 72px 14px 72px 14px 72px;
+      grid-template-rows: 56px 14px 56px 14px 56px;
+      gap: 0;
+    }
+    .room-cell {
+      background: #2d2d2d;
+      border: 2px solid #555;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      color: #ccc;
+      font-size: 11px;
+      transition: border-color 0.1s;
+    }
+    .room-cell:hover { border-color: #888; }
+    .room-cell.selected { border-color: #3a7bd5; color: #fff; background: #253550; }
+
+    .h-connector { /* horizontal strip between left-right neighbors */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .h-connector-inner {
+      width: 10px;
+      height: 30px;
+      border-radius: 2px;
+      background: #444;
+    }
+    .h-connector-inner.open { background: #3c9e3c; }
+    .h-connector:hover .h-connector-inner { opacity: 0.75; }
+
+    .v-connector { /* vertical strip between top-bottom neighbors */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .v-connector-inner {
+      width: 30px;
+      height: 10px;
+      border-radius: 2px;
+      background: #444;
+    }
+    .v-connector-inner.open { background: #3c9e3c; }
+    .v-connector:hover .v-connector-inner { opacity: 0.75; }
+
+    .grid-spacer { /* dead corner cells */ }
+
+    /* Tile grid */
+    #tile-container { flex-shrink: 0; }
+    #tile-container h2 { font-size: 13px; margin-bottom: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    #room-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+    #tile-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 32px);
+      grid-template-rows: repeat(8, 32px);
+      gap: 2px;
+    }
+    .tile-cell {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.08s;
+    }
+    .tile-cell.grass { background: #3c8c3c; border-color: #4aaf4a; }
+    .tile-cell:hover { opacity: 0.75; }
+  </style>
 </head>
 <body>
-  <h1>Map Editor</h1>
-  <p id="status">Phase 2 stub. UI in phase 3.</p>
-  <button id="test-save">Test Save (round-trip)</button>
+  <h1>Grass Slasher — Map Editor</h1>
+  <div id="toolbar">
+    <button id="save-btn" disabled>Save</button>
+    <span id="status">Loading...</span>
+  </div>
+  <div id="panels">
+    <div id="world-container">
+      <h2>World Map</h2>
+      <div id="world-grid"></div>
+    </div>
+    <div id="tile-container">
+      <h2>Room Tiles</h2>
+      <div id="room-label"></div>
+      <div id="tile-grid"></div>
+    </div>
+  </div>
 
   <script>
-    const status = document.getElementById('status');
-    const btn = document.getElementById('test-save');
+    let state = null;      // { rooms, worldMap }
+    let selectedRoom = '1,2';
+    let dirty = false;
 
-    let worldData = null;
+    const saveBtn = document.getElementById('save-btn');
+    const statusEl = document.getElementById('status');
 
-    fetch('/world-data.json')
-      .then(r => r.json())
-      .then(data => {
-        worldData = data;
-        const roomCount = Object.keys(data.rooms || {}).length;
-        const msg = 'Loaded ' + roomCount + ' rooms';
-        status.textContent = msg;
-        console.log(msg);
+    function setStatus(msg, cls) {
+      statusEl.textContent = msg;
+      statusEl.className = cls || '';
+    }
+
+    function markDirty() {
+      dirty = true;
+      setStatus('unsaved changes', 'dirty');
+    }
+
+    // ── World grid ────────────────────────────────────────────────────────────
+
+    // Grid layout maps (roomX, roomY) to CSS grid positions (1-based col, row).
+    // Room at (rx, ry) occupies grid-col 2*rx+1, grid-row 2*ry+1.
+    // H-connector between (rx,ry) and (rx+1,ry): grid-col 2*rx+2, grid-row 2*ry+1.
+    // V-connector between (rx,ry) and (rx,ry+1): grid-col 2*rx+1, grid-row 2*ry+2.
+    // Corner spacers: even col + even row.
+
+    function isOpen(ax, ay, bx, by) {
+      if (!state) return false;
+      const aKey = `${ax},${ay}`;
+      const bKey = `${bx},${by}`;
+      const aMap = state.worldMap[aKey];
+      const bMap = state.worldMap[bKey];
+      if (!aMap || !bMap) return false;
+      // A is left of B → check A.right and B.left
+      if (bx === ax + 1 && by === ay) {
+        return Array.isArray(aMap.right) && Array.isArray(bMap.left);
+      }
+      // A is above B → check A.down and B.up
+      if (by === ay + 1 && bx === ax) {
+        return Array.isArray(aMap.down) && Array.isArray(bMap.up);
+      }
+      return false;
+    }
+
+    function toggleConnection(ax, ay, bx, by) {
+      const aKey = `${ax},${ay}`;
+      const bKey = `${bx},${by}`;
+      const open = isOpen(ax, ay, bx, by);
+      if (bx === ax + 1 && by === ay) {
+        // horizontal: A.right ↔ B.left
+        state.worldMap[aKey].right = open ? null : [bx, by];
+        state.worldMap[bKey].left  = open ? null : [ax, ay];
+      } else if (by === ay + 1 && bx === ax) {
+        // vertical: A.down ↔ B.up
+        state.worldMap[aKey].down = open ? null : [bx, by];
+        state.worldMap[bKey].up   = open ? null : [ax, ay];
+      }
+      markDirty();
+      renderWorldGrid();
+    }
+
+    function renderWorldGrid() {
+      const grid = document.getElementById('world-grid');
+      grid.innerHTML = '';
+
+      for (let gridRow = 1; gridRow <= 5; gridRow++) {
+        for (let gridCol = 1; gridCol <= 5; gridCol++) {
+          const el = document.createElement('div');
+          el.style.gridColumn = gridCol;
+          el.style.gridRow = gridRow;
+
+          const isRoomCol = (gridCol % 2 === 1); // 1,3,5
+          const isRoomRow = (gridRow % 2 === 1); // 1,3,5
+
+          if (isRoomCol && isRoomRow) {
+            // Room cell
+            const rx = (gridCol - 1) / 2;
+            const ry = (gridRow - 1) / 2;
+            const key = `${rx},${ry}`;
+            el.className = 'room-cell' + (key === selectedRoom ? ' selected' : '');
+            el.textContent = key;
+            el.addEventListener('click', () => {
+              selectedRoom = key;
+              renderWorldGrid();
+              renderTileGrid();
+            });
+          } else if (!isRoomCol && isRoomRow) {
+            // Horizontal connector between (rx,ry) and (rx+1,ry)
+            const rx = (gridCol - 2) / 2;  // left room x
+            const ry = (gridRow - 1) / 2;
+            const open = isOpen(rx, ry, rx + 1, ry);
+            el.className = 'h-connector';
+            el.innerHTML = `<div class="h-connector-inner${open ? ' open' : ''}"></div>`;
+            el.title = open ? 'Click to wall off' : 'Click to open';
+            el.addEventListener('click', () => toggleConnection(rx, ry, rx + 1, ry));
+          } else if (isRoomCol && !isRoomRow) {
+            // Vertical connector between (rx,ry) and (rx,ry+1)
+            const rx = (gridCol - 1) / 2;
+            const ry = (gridRow - 2) / 2;  // top room y
+            const open = isOpen(rx, ry, rx, ry + 1);
+            el.className = 'v-connector';
+            el.innerHTML = `<div class="v-connector-inner${open ? ' open' : ''}"></div>`;
+            el.title = open ? 'Click to wall off' : 'Click to open';
+            el.addEventListener('click', () => toggleConnection(rx, ry, rx, ry + 1));
+          } else {
+            // Dead corner spacer
+            el.className = 'grid-spacer';
+          }
+
+          grid.appendChild(el);
+        }
+      }
+    }
+
+    // ── Tile grid ─────────────────────────────────────────────────────────────
+
+    function hasGrass(layout, col, row) {
+      return layout.some(e => e.col === col && e.row === row);
+    }
+
+    function toggleTile(col, row) {
+      const room = state.rooms[selectedRoom];
+      const idx = room.layout.findIndex(e => e.col === col && e.row === row);
+      if (idx >= 0) {
+        room.layout.splice(idx, 1);
+      } else {
+        room.layout.push({ col, row });
+      }
+      markDirty();
+      renderTileGrid();
+    }
+
+    function renderTileGrid() {
+      const label = document.getElementById('room-label');
+      const grid = document.getElementById('tile-grid');
+      label.textContent = `Room ${selectedRoom}`;
+      grid.innerHTML = '';
+
+      const room = state.rooms[selectedRoom];
+      if (!room) {
+        label.textContent = `Room ${selectedRoom} — not found`;
+        return;
+      }
+
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 10; c++) {
+          const el = document.createElement('div');
+          el.className = 'tile-cell' + (hasGrass(room.layout, c, r) ? ' grass' : '');
+          el.title = `col ${c}, row ${r}`;
+          el.addEventListener('click', () => toggleTile(c, r));
+          grid.appendChild(el);
+        }
+      }
+    }
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+
+    saveBtn.addEventListener('click', () => {
+      fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
       })
-      .catch(err => {
-        status.textContent = 'Load failed: ' + err.message;
-        console.error(err);
-      });
-
-    btn.addEventListener('click', () => {
-      if (!worldData) { status.textContent = 'No data loaded yet'; return; }
-      fetch('/world-data.json')
-        .then(r => r.json())
-        .then(data => fetch('/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        }))
         .then(r => r.json())
         .then(result => {
-          status.textContent = result.ok ? 'Saved OK' : ('Save failed: ' + result.error);
+          if (result.ok) {
+            const now = new Date();
+            const hms = now.toTimeString().slice(0, 8);
+            dirty = false;
+            setStatus(`Saved OK at ${hms}`, 'ok');
+          } else {
+            setStatus('Save failed: ' + result.error, 'error');
+          }
         })
         .catch(err => {
-          status.textContent = 'Save error: ' + err.message;
+          setStatus('Save error: ' + err.message, 'error');
         });
     });
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+
+    fetch('/world-data.json')
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        state = data;
+        saveBtn.disabled = false;
+        setStatus('clean');
+        renderWorldGrid();
+        renderTileGrid();
+      })
+      .catch(err => {
+        setStatus('Load failed: ' + err.message, 'error');
+      });
   </script>
 </body>
 </html>
