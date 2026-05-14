@@ -1,88 +1,5 @@
 import { W, H, COLS, ROWS, TILE } from './constants.js';
-
-// Room definitions
-// widthCells/heightCells: how many 640×480 cells this room spans
-// layout: {col, row}[] — room-local grid coords
-const ROOMS = {
-  '0,0': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:2},{col:1,row:3},{col:3,row:1},
-    {col:7,row:1},{col:8,row:2},{col:7,row:3},{col:6,row:1},
-    {col:1,row:5},{col:2,row:6},{col:3,row:6},
-    {col:7,row:5},{col:8,row:6},{col:6,row:6},
-    {col:4,row:3},{col:5,row:4},
-  ]},
-  '1,0': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:1},{col:1,row:2},
-    {col:8,row:1},{col:7,row:1},{col:8,row:2},
-    {col:1,row:5},{col:2,row:6},{col:1,row:6},
-    {col:8,row:5},{col:7,row:6},{col:8,row:6},
-    {col:2,row:3},{col:2,row:4},
-    {col:7,row:3},{col:7,row:4},
-  ]},
-  '2,0': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:2},{col:1,row:3},{col:3,row:2},
-    {col:7,row:1},{col:8,row:2},{col:7,row:3},{col:6,row:2},
-    {col:1,row:5},{col:2,row:6},{col:3,row:5},
-    {col:7,row:5},{col:8,row:6},{col:6,row:5},
-    {col:4,row:4},{col:5,row:3},
-  ]},
-  '0,1': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:1},{col:1,row:2},{col:3,row:2},
-    {col:7,row:1},{col:8,row:1},{col:8,row:2},{col:6,row:2},
-    {col:1,row:4},{col:1,row:5},{col:2,row:6},
-    {col:8,row:4},{col:8,row:5},{col:7,row:6},
-    {col:4,row:3},{col:5,row:5},
-  ]},
-  '1,1': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:2},{col:1,row:3},
-    {col:8,row:1},{col:7,row:2},{col:8,row:3},
-    {col:1,row:5},{col:2,row:6},{col:1,row:6},
-    {col:8,row:5},{col:7,row:6},{col:8,row:6},
-    {col:4,row:1},{col:5,row:1},{col:4,row:6},{col:5,row:6},
-  ]},
-  '2,1': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:2},{col:3,row:1},{col:1,row:2},
-    {col:7,row:1},{col:8,row:2},{col:6,row:1},{col:8,row:1},
-    {col:1,row:5},{col:2,row:5},{col:1,row:6},
-    {col:7,row:5},{col:8,row:5},{col:8,row:6},
-    {col:4,row:3},{col:5,row:4},
-  ]},
-  '0,2': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:2},{col:1,row:3},{col:3,row:1},
-    {col:7,row:1},{col:8,row:2},{col:7,row:3},{col:6,row:1},
-    {col:1,row:5},{col:2,row:6},{col:3,row:6},
-    {col:7,row:5},{col:8,row:6},{col:6,row:6},
-    {col:4,row:4},{col:5,row:3},
-  ]},
-  '1,2': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:1},{col:1,row:2},
-    {col:8,row:1},{col:7,row:1},{col:8,row:2},
-    {col:1,row:5},{col:2,row:6},{col:1,row:6},
-    {col:8,row:5},{col:7,row:6},{col:8,row:6},
-    {col:2,row:3},{col:2,row:4},
-    {col:7,row:3},{col:7,row:4},
-  ]},
-  '2,2': { widthCells:1, heightCells:1, layout: [
-    {col:1,row:1},{col:2,row:2},{col:3,row:1},{col:1,row:2},
-    {col:7,row:1},{col:8,row:2},{col:6,row:1},{col:8,row:1},
-    {col:1,row:5},{col:2,row:5},{col:3,row:6},
-    {col:7,row:5},{col:8,row:5},{col:6,row:6},
-    {col:4,row:3},{col:5,row:4},
-  ]},
-};
-
-// World map adjacency. null = wall.
-const WORLD_MAP = {
-  '0,0': { up:null,    down:[0,1], left:null,    right:[1,0] },
-  '1,0': { up:null,    down:[1,1], left:[0,0],   right:[2,0] },
-  '2,0': { up:null,    down:[2,1], left:[1,0],   right:null  },
-  '0,1': { up:[0,0],   down:[0,2], left:null,    right:[1,1] },
-  '1,1': { up:[1,0],   down:[1,2], left:[0,1],   right:[2,1] },
-  '2,1': { up:[2,0],   down:[2,2], left:[1,1],   right:null  },
-  '0,2': { up:[0,1],   down:null,  left:null,    right:[1,2] },
-  '1,2': { up:[1,1],   down:null,  left:[0,2],   right:[2,2] },
-  '2,2': { up:[2,1],   down:null,  left:[1,2],   right:null  },
-};
+import worldData from './world-data.json';
 
 export let roomX = 1, roomY = 2;
 
@@ -105,21 +22,21 @@ export const transition = {
 
 export const PAYMENT_ZONE = { rx:1, ry:0, px:W/2, py:H/2, radius:40 };
 
-export function getCurrentRoom() { return ROOMS[`${roomX},${roomY}`]; }
+export function getCurrentRoom() { return worldData.rooms[`${roomX},${roomY}`]; }
 
 export function getNeighbor(dir) {
-  return (WORLD_MAP[`${roomX},${roomY}`] ?? {})[dir] ?? null;
+  return (worldData.worldMap[`${roomX},${roomY}`] ?? {})[dir] ?? null;
 }
 
 export function getRoomPixelSize(rx, ry) {
-  const r = ROOMS[`${rx},${ry}`];
+  const r = worldData.rooms[`${rx},${ry}`];
   return r ? { w: r.widthCells * W, h: r.heightCells * H } : { w: W, h: H };
 }
 
-export function getLayout(rx, ry) { return ROOMS[`${rx},${ry}`]?.layout ?? []; }
+export function getLayout(rx, ry) { return worldData.rooms[`${rx},${ry}`]?.layout ?? []; }
 
 export function getRockTiles(rx, ry) {
-  const adj = WORLD_MAP[`${rx},${ry}`] ?? {};
+  const adj = worldData.worldMap[`${rx},${ry}`] ?? {};
   const half = TILE / 2;
   const tiles = [];
   if (adj.left === null) {
