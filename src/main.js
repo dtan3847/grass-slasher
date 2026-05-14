@@ -277,6 +277,7 @@ function loop() {
   if (transition.active) {
     drawTransition();
     drawFloats();
+    drawJoystick(joystick);
     drawDebugButton(debugMode, grassSpawnEnabled);
   } else {
     drawGround();
