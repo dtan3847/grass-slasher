@@ -8,7 +8,8 @@
     "editor": "node editor/server.js",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "review": "playwright test --project=visual"
   },
   "devDependencies": {
     "esbuild": "latest",
