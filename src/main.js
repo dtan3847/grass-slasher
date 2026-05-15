@@ -252,6 +252,7 @@ function updateUI() {
     ['btn-auto',     'autoSlash',  lvl => `&#129302; Auto-Slash Lv${lvl+1}`,  null],
     ['btn-gemtier',   'gemTier',    lvl => `&#128081; Gem Tier Lv${lvl+1}`,    3],
     ['btn-movespeed', 'moveSpeed',  lvl => `&#128070; Move Speed Lv${lvl+1}`,  5],
+    ['btn-magnet',    'magnet',     lvl => `&#129516; Magnet Lv${lvl+1}`,       5],
   ];
 
   for (const [btnId, id, label, maxLevel] of defs) {
