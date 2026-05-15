@@ -103,24 +103,55 @@ export function drawRocks(rocks) {
 export function drawPlayer(px = player.x, py = player.y) {
   ctx.save();
   ctx.translate(px, py);
+
+  // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.beginPath();
   ctx.ellipse(0, 14, 9, 3, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#2d6b2d';
-  ctx.beginPath();
-  ctx.moveTo(-7, -10); ctx.lineTo( 7, -10); ctx.lineTo( 0, -16);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#e8c46a';
-  ctx.fillRect(-6, -10, 12, 8);
-  ctx.fillStyle = '#3d8b3d';
-  ctx.fillRect(-7, -2, 14, 14);
-  ctx.fillStyle = '#2d6b2d';
-  ctx.fillRect(-7, 10, 14, 2);
-  ctx.fillStyle = '#222';
-  const ex = Math.cos(player.facing) * 2;
-  ctx.fillRect(-3 + ex, -7, 2, 2);
-  ctx.fillRect( 1 + ex, -7, 2, 2);
+
+  const sinF = Math.sin(player.facing);
+  const facingUp = sinF < -0.5;
+
+  if (facingUp) {
+    // Back of head: body + belt same, head shown from behind
+    // Body
+    ctx.fillStyle = '#3d8b3d';
+    ctx.fillRect(-7, -2, 14, 14);
+    ctx.fillStyle = '#2d6b2d';
+    ctx.fillRect(-7, 10, 14, 2);
+    // Back of head (skin, slightly wider for anime proportion)
+    ctx.fillStyle = '#e8c46a';
+    ctx.fillRect(-7, -11, 14, 9);
+    // Hair bump visible above head on back-facing
+    ctx.fillStyle = '#5a3010';
+    ctx.fillRect(-5, -14, 10, 4);
+    // Hat band from behind (horizontal band, no brim)
+    ctx.fillStyle = '#2d6b2d';
+    ctx.fillRect(-7, -12, 14, 3);
+  } else {
+    // Front/side facing — anime proportions
+    // Hat (front brim triangle)
+    ctx.fillStyle = '#2d6b2d';
+    ctx.beginPath();
+    ctx.moveTo(-8, -10); ctx.lineTo(8, -10); ctx.lineTo(0, -17);
+    ctx.closePath(); ctx.fill();
+    // Face (slightly taller for anime head)
+    ctx.fillStyle = '#e8c46a';
+    ctx.fillRect(-7, -10, 14, 9);
+    // Body
+    ctx.fillStyle = '#3d8b3d';
+    ctx.fillRect(-7, -2, 14, 14);
+    // Belt
+    ctx.fillStyle = '#2d6b2d';
+    ctx.fillRect(-7, 10, 14, 2);
+    // Eyes: anime-larger (3x3), offset by cos(facing)
+    ctx.fillStyle = '#222';
+    const ex = Math.cos(player.facing) * 2;
+    ctx.fillRect(-4 + ex, -8, 3, 3);
+    ctx.fillRect( 1 + ex, -8, 3, 3);
+  }
+
   if (player.slashState !== 'idle') {
     const arc = SLASH_ARCS[player.slashCardinal];
     let angle, swordLen;
