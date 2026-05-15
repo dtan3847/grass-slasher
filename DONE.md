@@ -1,5 +1,9 @@
 # Grass Slasher — Completed Items
 
+- [x] [ux] sprite facing direction — up-facing distinct from front/side via eye-skip (no separate hat band branch). Hat triangle, face, body, belt drawn unconditionally; eyes wrapped in `if (!facingUp)`. Anime-sized head (14×9 face) + bigger eyes (3×3). Hat + body + belt recolored royal purple (`#5a3a8c` / `#7a52b0`) so player no longer blends with grass.
+
+- [x] [feature] editor right-click erases — right-button paints with `'empty'`. Right-drag erases across stroke. `contextmenu` suppressed. `mousemove` guard via `e.buttons` bitmask.
+
 - [x] [feature] editor click-and-drag paint — mousedown locks `strokeTarget` to current paint mode, mousemove paints idempotently while held, mouseup/mouseleave ends stroke. Event delegation on `#tile-grid`. `paintTile` gained bounds-check + optional `mode` param.
 
 - [x] [feature] magnet upgrade — gems within range pulled toward player; existing pickupDist=14 still grants pickup. `magnet: { level: 0, baseCost: 25, costMult: 1.6, maxLevel: 5 }` in `src/upgrades.js`. Range = `level * 25` px (lv5 = 125). Pull = `0.5*(1-dist/range) + 0.15` toward player, overcomes damping. Resting gems unset `rest` when in range. Shop button `btn-magnet` (🧲). Note: circular import gems↔upgrades introduced; tracked as separate refactor TODO.
