@@ -118,7 +118,7 @@ function update() {
   const nearPaymentZone = inPaymentRoom &&
     Math.hypot(player.x - PAYMENT_ZONE.px, player.y - PAYMENT_ZONE.py) <= PAYMENT_ZONE.radius;
   const promptEl = document.getElementById('debt-prompt');
-  if (promptEl) promptEl.style.display = (nearPaymentZone && !gameWon && !isDebtCleared()) ? 'block' : 'none';
+  if (promptEl) promptEl.style.display = (nearPaymentZone && !gameWon && !isDebtCleared() && gemCount >= debtRemaining) ? 'block' : 'none';
 
   if (!gameWon) {
     let dx = 0, dy = 0;
@@ -334,7 +334,7 @@ function downloadLog() {
 
 document.addEventListener('keydown', e => {
   if (!introShown) { introShown = true; return; }
-  if (gameWon && e.code === 'Enter') { gameWon = false; return; }
+  if (gameWon && (e.code === 'Enter' || e.code === 'KeyZ' || e.code === 'Space')) { gameWon = false; e.preventDefault(); return; }
   keys[e.code] = true;
   if (e.code === 'Backquote') {
     debugMode = !debugMode;
