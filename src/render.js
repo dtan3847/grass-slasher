@@ -1,4 +1,5 @@
-import { ctx, W, H, TILE, COLS, ROWS } from './constants.js';
+import { ctx } from './canvas.js';
+import { W, H, TILE, COLS, ROWS } from './geometry.js';
 import { player, SLASH_ARCS, snapCardinal, getSlashHitbox } from './player.js';
 import { drawHitbox } from './hitbox.js';
 import { grasses } from './grass.js';

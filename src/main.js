@@ -1,4 +1,5 @@
-import { canvas, ctx, W, H, SCALE } from './constants.js';
+import { canvas, ctx, bootCanvas } from './canvas.js';
+import { W, H, SCALE } from './geometry.js';
 import { player, SLASH_ARCS, slashQueued, setSlashQueued, trySlash, startSweep, startRetract, snapCardinal, getSlashHitbox } from './player.js';
 import { grasses, initGrass, checkSlashHits, checkSlashCap, loadRoom } from './grass.js';
 import { gemCount, addGems, updateGems, clearGems } from './gems.js';
@@ -8,6 +9,8 @@ import { transition, camera, getNeighbor, triggerTransition, advanceTransition, 
 import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn, drawJoystick } from './render.js';
 import { installTestHooks } from './test-hooks.js';
 import { debugMode, setDebugMode } from './debug.js';
+
+bootCanvas();
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };

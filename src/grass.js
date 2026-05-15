@@ -1,4 +1,4 @@
-import { TILE } from './constants.js';
+import { TILE } from './geometry.js';
 import { player, getSlashHitbox } from './player.js';
 import { upgrades } from './upgrades.js';
 import { testPoint } from './hitbox.js';

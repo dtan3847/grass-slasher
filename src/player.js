@@ -1,4 +1,4 @@
-import { W, H, TILE } from './constants.js';
+import { W, H, TILE } from './geometry.js';
 import { upgrades } from './upgrades.js';
 
 export const SLASH_ARCS = [

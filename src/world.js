@@ -1,4 +1,4 @@
-import { W, H, COLS, ROWS, TILE } from './constants.js';
+import { W, H, COLS, ROWS, TILE } from './geometry.js';
 import worldData from './world-data.json';
 
 export let roomX = 1, roomY = 2;

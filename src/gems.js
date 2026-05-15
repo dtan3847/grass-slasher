@@ -1,4 +1,4 @@
-import { W, H } from './constants.js';
+import { W, H } from './geometry.js';
 import { player } from './player.js';
 import { addFloat } from './render.js';
 import { upgrades } from './upgrades.js';
