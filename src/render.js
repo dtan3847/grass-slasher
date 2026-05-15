@@ -110,6 +110,29 @@ export function drawPlayer(px = player.x, py = player.y) {
   ctx.ellipse(0, 14, 9, 3, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  if (player.slashState !== 'idle') {
+    const arc = SLASH_ARCS[player.slashCardinal];
+    let angle, swordLen;
+    if (player.slashState === 'sweeping') {
+      const t = 1 - player.slashTimer / player.sweepDur;
+      angle    = arc.start + t * arc.delta;
+      swordLen = player.slashRange - 9;
+    } else {
+      angle    = arc.start + arc.delta;
+      const t  = player.slashTimer / player.retractDur;
+      swordLen = (player.slashRange - 9) * t;
+    }
+    if (swordLen > 1) {
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.fillStyle = 'rgba(220, 235, 255, 0.92)';
+      ctx.fillRect(0, -3, swordLen + 9, 6);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fillRect(0, -3, swordLen + 9, 2);
+      ctx.restore();
+    }
+  }
+
   const sinF = Math.sin(player.facing);
   const facingUp = sinF < -0.5;
 
@@ -135,28 +158,6 @@ export function drawPlayer(px = player.x, py = player.y) {
     ctx.fillRect( 1 + ex, -8, 3, 3);
   }
 
-  if (player.slashState !== 'idle') {
-    const arc = SLASH_ARCS[player.slashCardinal];
-    let angle, swordLen;
-    if (player.slashState === 'sweeping') {
-      const t = 1 - player.slashTimer / player.sweepDur;
-      angle    = arc.start + t * arc.delta;
-      swordLen = player.slashRange - 9;
-    } else {
-      angle    = arc.start + arc.delta;
-      const t  = player.slashTimer / player.retractDur;
-      swordLen = (player.slashRange - 9) * t;
-    }
-    if (swordLen > 1) {
-      ctx.save();
-      ctx.rotate(angle);
-      ctx.fillStyle = 'rgba(220, 235, 255, 0.92)';
-      ctx.fillRect(9, -3, swordLen, 6);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.fillRect(9, -3, swordLen, 2);
-      ctx.restore();
-    }
-  }
   ctx.restore();
 }
 
