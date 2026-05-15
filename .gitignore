@@ -4,3 +4,4 @@ node_modules/
 playwright-report/
 test-results/
 /playwright/.cache/
+.claude/settings.local.json
