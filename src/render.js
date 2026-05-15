@@ -176,9 +176,9 @@ export function drawPlayer(px = player.x, py = player.y) {
       ctx.save();
       ctx.rotate(angle);
       ctx.fillStyle = 'rgba(220, 235, 255, 0.92)';
-      ctx.fillRect(0, -3, swordLen + 9, 6);
+      ctx.fillRect(9, -3, swordLen, 6);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.fillRect(0, -3, swordLen + 9, 2);
+      ctx.fillRect(9, -3, swordLen, 2);
       ctx.restore();
     }
   }
