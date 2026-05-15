@@ -29,6 +29,14 @@ For each code change:
 
 **Grouping rules:** Bundle 2-3 simple tasks only if they touch the same code area and each has a clear diagnosis. Keep complex tasks solo. Never bundle unrelated features/areas — the dev is instructed to refuse scope creep and a bundled spawn wastes that signal. When in doubt: one task per spawn.
 
+**Dispatch planning (when user says "dispatch", "do next tasks", or similar without naming items):** Before spawning anything, scan `TODO.md` and propose 2-3 dispatch plans to the user, then wait for selection. Each plan should identify:
+
+- **Groupable items** — TODOs in the same file/area with clear diagnoses, that one dev can do in one spawn (apply the Grouping rules above).
+- **Parallelizable items** — TODOs touching disjoint `src/` files that can run as concurrent `grass-slasher-dev` spawns. Use the Module map + Parallel edit safety rule at the bottom of this file to check file overlap. If two tasks share any file (even tangentially — e.g. both add a shop button in `index.html` or both touch `updateUI` in `src/main.js`), they are NOT parallel-safe.
+- **Sequential dependencies** — when item B's diagnosis assumes item A is already merged (e.g. magnet refactor depending on uncapped→lv20), call this out and order accordingly.
+
+Format each plan as: `Plan N: <one-line summary>. Spawns: [agent1: items X+Y bundled] [agent2 (parallel): item Z] [agent3 (sequential after agent1): item W].` Note tradeoffs (e.g. "Plan A is fastest but mixes a feature with a refactor; Plan B isolates risk but is slower"). Default recommendation: parallelize where safe, bundle only when items share area AND are simple. Never auto-dispatch — always wait for user approval.
+
 The dev subagent is one-shot — it has no memory of prior spawns. Each spawn must contain everything the dev needs to do the job. One TODO item may require multiple sequential spawns if first attempt is incomplete.
 
 ### Planning discipline (read this before any non-trivial plan)
