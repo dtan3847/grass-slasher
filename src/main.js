@@ -244,7 +244,7 @@ if (new URLSearchParams(location.search).has('test')) {
 
 function updateUI() {
   document.getElementById('gem-count').textContent = gemCount;
-  document.getElementById('debt-display').textContent = `Debt: ${debtRemaining} / ${DEBT_TOTAL}`;
+  document.getElementById('debt-display').textContent = `Debt: ${debtRemaining}`;
 
   const defs = [
     ['btn-gems',     'gemMult',    lvl => `&#128142; +Yield Lv${lvl+1}`,      20],
@@ -344,10 +344,10 @@ document.addEventListener('keydown', e => {
     addGems(100);
     return;
   }
-  if (e.code === 'KeyE' && !e.repeat && player.slashState === 'idle') {
+  if (e.code === 'KeyE' && !e.repeat) {
     const nearZone = roomX === PAYMENT_ZONE.rx && roomY === PAYMENT_ZONE.ry &&
       Math.hypot(player.x - PAYMENT_ZONE.px, player.y - PAYMENT_ZONE.py) <= PAYMENT_ZONE.radius;
-    if (nearZone && !gameWon && !isDebtCleared()) {
+    if (nearZone && !gameWon && !isDebtCleared() && gemCount >= debtRemaining) {
       payDebt(gemCount);
       if (isDebtCleared()) gameWon = true;
     }
