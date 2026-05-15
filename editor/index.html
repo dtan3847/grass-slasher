@@ -132,6 +132,8 @@
     let selectedRoom = '1,2';
     let dirty = false;
     let paintMode = 'grass';
+    let isPainting = false;
+    let strokeTarget = null;
 
     const saveBtn = document.getElementById('save-btn');
     const statusEl = document.getElementById('status');
@@ -230,8 +232,11 @@
       return rocks.some(e => e.col === col && e.row === row);
     }
 
-    function paintTile(col, row) {
+    function paintTile(col, row, mode) {
+      if (col < 0 || col >= 10 || row < 0 || row >= 8) return;
       const room = state.rooms[selectedRoom];
+      if (!room) return;
+      const m = mode ?? paintMode;
 
       // Remove from both arrays first
       const grassIdx = room.layout.findIndex(e => e.col === col && e.row === row);
@@ -241,9 +246,9 @@
       if (rockIdx >= 0) room.rocks.splice(rockIdx, 1);
 
       // Add to the right array
-      if (paintMode === 'grass') {
+      if (m === 'grass') {
         room.layout.push({ col, row });
-      } else if (paintMode === 'rock') {
+      } else if (m === 'rock') {
         room.rocks.push({ col, row });
       }
       // 'empty' — already removed above, nothing to add
@@ -277,11 +282,40 @@
           else if (hasGrass(room.layout, c, r)) type = 'grass';
 
           el.appendChild(makeTileCanvas(type));
-          el.addEventListener('click', () => paintTile(c, r));
           grid.appendChild(el);
         }
       }
     }
+
+    // ── Drag-paint ────────────────────────────────────────────────────────────
+
+    function tileFromEvent(e) {
+      const grid = document.getElementById('tile-grid');
+      const rect = grid.getBoundingClientRect();
+      const col = Math.floor((e.clientX - rect.left)  / 36);
+      const row = Math.floor((e.clientY - rect.top)   / 36);
+      return { col, row };
+    }
+
+    const tileGrid = document.getElementById('tile-grid');
+
+    tileGrid.addEventListener('mousedown', e => {
+      if (!state) return;
+      e.preventDefault();
+      isPainting = true;
+      strokeTarget = paintMode;
+      const { col, row } = tileFromEvent(e);
+      paintTile(col, row, strokeTarget);
+    });
+
+    tileGrid.addEventListener('mousemove', e => {
+      if (!isPainting) return;
+      const { col, row } = tileFromEvent(e);
+      paintTile(col, row, strokeTarget);
+    });
+
+    tileGrid.addEventListener('mouseleave', () => { isPainting = false; });
+    document.addEventListener('mouseup',   () => { isPainting = false; });
 
     // ── Save ──────────────────────────────────────────────────────────────────
 
