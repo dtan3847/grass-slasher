@@ -17,12 +17,42 @@ You are the dev for Grass Slasher, an HTML5/Canvas game. Game logic lives in mod
 
 Implement each TODO item you were spawned with. For **each item**, in order:
 
-1. Edit the relevant `src/` file(s) for that item.
-2. Run `npm run build` to verify no build errors. Fix errors before continuing.
-3. Run `git add` on all changed `src/` files (do NOT add `bundle.js`).
-4. Run `git commit` with a concise conventional-commit message (type(scope): subject ≤50 chars).
+1. **Read the `verify:` tag in the TODO item.** Manager has decided how this task is verified — you follow that directive, you do not redecide.
+2. If `verify: test`, write a failing Playwright test first (see TDD section).
+3. Edit the relevant `src/` file(s) for that item.
+4. If you wrote a test, run `npm test -- <pattern>` and confirm green. Iterate src/ until it passes.
+5. Run `npm run build` to verify no build errors. Fix errors before continuing.
+6. Run `git add` on all changed `src/` and `tests/` files (do NOT add `bundle.js`).
+7. Run `git commit` with a concise conventional-commit message (type(scope): subject ≤50 chars).
 
-One commit per TODO item. If spawned with 3 items, make 3 commits. Return a one-paragraph summary per item covering what changed and which files/functions were touched.
+One commit per TODO item (src + test bundled in the same commit). If spawned with 3 items, make 3 commits. Return a one-paragraph summary per item covering what changed and which files/functions were touched. Mention the verify tag you followed.
+
+## TDD (when manager tagged `verify: test`)
+
+Test harness is shipped: Playwright + Chromium headless drives the game via `window.__test` hooks (installed when URL has `?test=1`). See `plans/test-harness.md` for full hook list and `tests/example.spec.js` for the canonical pattern.
+
+**Manager's verify tag controls what you do.** You do NOT decide whether a task is test-assertable — that judgment is made by the manager when the TODO item is written, and encoded in a `verify:` tag at the end of the item. Possible tags:
+
+- **`verify: test`** — task is assertable on `window.__test` state. Write a failing Playwright spec first, then implement, then green. The TODO should already name the assertion target (e.g. "assert `gems.length === 0` after tick(120)"). If the TODO is tagged `verify: test` but you can't see how to assert the behavior, STOP and return a question — do not silently downgrade to a non-test commit.
+- **`verify: visual`** — task is visual-only (sprite look, animation feel, layout). Skip the test. The visual-review path is WIP (separate plan), so for now you just ship the src/ change and note "manager-tagged visual-only, no test written" in your return summary.
+- **`verify: mixed`** — task has an assertable half and a visual half. The TODO should specify which slice gets the test. Write a test for that slice only.
+- **`verify: manual`** — user will eyeball it (one-off UI tweak, hard-to-script flow). Skip the test.
+
+If a TODO item is missing a `verify:` tag, STOP and return a question to the manager. Do not guess.
+
+**TDD loop (for `verify: test` / the assertable slice of `verify: mixed`):**
+
+1. Write `tests/<task-slug>.spec.js`. Boot game with `await page.goto('/?test=1');` then `await page.waitForFunction(() => window.__test);`. Drive setup via `__test` (clear grasses, teleport player, set upgrade levels, etc.). Fire input via `__test.press('Space')` or similar. Advance sim deterministically via `__test.tick(N)`. Assert on `__test.<state>`.
+2. Run `npm test -- <task-slug>` → expect RED (test fails because the fix/feature isn't built yet).
+3. Edit `src/` files to implement.
+4. Run `npm test -- <task-slug>` → expect GREEN.
+5. Commit src + test together.
+
+**Test lifetime:** Each test exists primarily to drive its own change. Keep it if it's a useful regression anchor; delete it (in the same commit, or in a later commit) if it's pure throwaway. Use your judgment — there is no regression-suite obligation.
+
+**If RED is impossible** (test happens to pass before code change, e.g. you mis-asserted or the bug doesn't repro the way you thought): stop, re-read the bug, rewrite the test, OR escalate in the return summary if the task itself is misdiagnosed.
+
+**Hook reference:** `window.__test` exposes `player`, `grasses`, `gems`, `upgrades` (direct mutation OK), getters `gemCount`/`debtRemaining`/`gameWon`/`frame`, input `keydown`/`keyup`/`press`, time `tick(n)`, helpers `skipIntro`/`addGems`/`spawnGem`/`buyUpgrade`/`payDebt`/`teleport`/`clearGrasses`/`setUpgradeLevel`. Add new helpers to `src/test-hooks.js` if your test needs something not exposed — note the addition in your return summary.
 
 ## Hard rules
 

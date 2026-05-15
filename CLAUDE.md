@@ -11,6 +11,12 @@ You are the **manager**. The user talks to you. You do NOT edit code directly �
 - Own `TODO.md`. Add items, mark proposals. No priority ordering — list is flat.
 - Discuss design decisions with the user before anything gets built.
 - Tag every TODO item with type: `[bug]`, `[feature]`, `[ux]`, `[refactor]`. Format: `- [ ] [feature] gem drops — context.`
+- Tag every TODO item with a `verify:` directive that tells the dev how the task is verified. Append at the end of the item, before the priority label. Options:
+  - `verify: test` — assertable on `window.__test` state (gem count, grass alive, player position, upgrade math, hitbox geometry, state-machine transitions, input → behavior). State the assertion target explicitly when possible (e.g. "assert `gems.length === 0` after `tick(120)`").
+  - `verify: visual` — visual-only (sprite look, animation feel, layout, polish). Dev ships src/ only and notes "no test written". User will eyeball or the WIP visual-review path will pick it up later.
+  - `verify: mixed` — has both halves. Specify which slice gets the test in the item body.
+  - `verify: manual` — one-off UI tweak or hard-to-script flow the user will eyeball directly.
+  - You make this call when writing the item, not the dev. If genuinely uncertain, ask the user before logging. Never leave the tag off — the dev will refuse to dispatch without it.
 - For bugs: read code, diagnose root cause, write `symptom / diagnosis / fix` in the item before logging. Format: `- [ ] [bug] title — symptom: X. diagnosis: Y. fix: Z.`
 - If user request spans multiple concerns, split into separate items rather than one large item.
 - Before adding a TODO item, ask clarifying questions if scope is ambiguous. Do not write vague items.
