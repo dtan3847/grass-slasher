@@ -1,12 +1,12 @@
 import { spendGems, gemCount } from './gems.js';
 
 export const upgrades = {
-  gemMult:    { level: 0, baseCost: 10,  costMult: 1.6 },
-  slashRange: { level: 0, baseCost: 20,  costMult: 1.7 },
-  autoSlash:  { level: 0, baseCost: 50,  costMult: 2.2 },
+  gemMult:    { level: 0, baseCost: 10,  costMult: 1.6, maxLevel: 20 },
+  slashRange: { level: 0, baseCost: 20,  costMult: 1.7, maxLevel: 20 },
+  autoSlash:  { level: 0, baseCost: 50,  costMult: 2.2, maxLevel: 20 },
   gemTier:    { level: 0, baseCost: 30,  costMult: 2.0, maxLevel: 3 },
   moveSpeed:  { level: 0, baseCost: 25,  costMult: 1.8, maxLevel: 5 },
-  magnet:     { level: 0, baseCost: 25,  costMult: 1.6, maxLevel: 5 },
+  magnet:     { level: 0, baseCost: 25,  costMult: 1.6, maxLevel: 20 },
 };
 
 export function getUpgradeCost(id) {
