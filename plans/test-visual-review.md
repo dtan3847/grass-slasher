@@ -1,101 +1,194 @@
-# Visual Review via Claude — WIP
+# Visual Review via Video Artifact
 
-Status: **WIP, awaiting decisions.** Do not dispatch dev until open Qs resolved.
+Status: **decisions locked.** Ready to dispatch when manager picks up the implementation TODO.
 
 ## Goal
 
-User on phone, away from computer. Wants Claude to verify a visual/behavioral change in-browser that's hard to assert in code (e.g. "player sprite faces up looks like back of head", "particle burst feels right", "shop layout doesn't overflow"). User tells Claude "review feature X" → Claude triggers run → Claude reads output → Claude reports → user directs next step from phone.
+User on phone, away from keyboard. For TODO items tagged `verify: visual` (or the visual slice of `verify: mixed`), dev produces a `.webm` video of the change in action. User watches video on phone, decides pass/fail, directs next step.
+
+Claude does NOT consume video. Video is for the user only.
 
 ## Non-goals
 
-- Not a regression suite.
-- Not auto-trigger on push.
-- Not video playback for the *user* — user does not watch. Claude consumes output.
+- Not a regression suite. Specs exist primarily to capture *that* change, but stay around as cheap documentation + rerunnable baseline.
+- Not auto-trigger on every push — only when `tests/visual/**` changes.
+- Not local-run primary path. Local works (`npm run review`), but the canonical "user on phone" flow is GitHub Actions artifact.
+- No screenshots, no PNG capture, no Claude-side visual inspection.
 
-## Core architecture (locked)
+## Architecture (locked)
 
-- Playwright scripted playthrough (no assertions, just driven inputs).
-- Captures **PNG screenshots** at scripted beats — Claude `Read` tool consumes PNGs natively. Video not used by Claude (no native video input).
-- Manual trigger only.
+- Per-feature Playwright spec under `tests/visual/<feature-slug>.spec.js`.
+- Spec uses same `window.__test` hooks as the TDD harness — same boot pattern (`page.goto('/?test=1')`, `waitForFunction(() => window.__test)`).
+- Spec drives inputs through the scenario. **No `expect()` calls** — pure capture.
+- Playwright `video: 'on'` records entire run as `.webm`.
+- Viewport: full page (game canvas + DOM shop + debt prompt all visible).
+- Header comment `// expect: <what user should see>` documents intent for future viewings.
+- GitHub Actions workflow `.github/workflows/visual-review.yml` runs on push when `tests/visual/**` changes, or manual via `workflow_dispatch`. Workflow uploads `test-results/` as artifact.
+- User opens GitHub Actions tab on phone → latest run → artifact ZIP → extract → watch.
 
-## Open Qs
+## File list
 
-### 1. Where does the run happen?
+### `playwright.config.js` — add `visual` project
 
-- **(a) GitHub Actions `workflow_dispatch`** — Claude triggers via `gh workflow run`, waits, downloads artifact via `gh run download`, reads PNGs.
-  - Pro: works even when user PC off.
-  - Con: ~1-2min latency, requires `gh` CLI auth in Claude env, artifact retention costs (free tier OK).
-- **(b) Local Playwright run from Claude's PowerShell** — Claude runs `npx playwright test --grep visual` locally, reads PNGs from `test-output/` directly in same session.
-  - Pro: instant, no cloud, no auth.
-  - Con: requires user PC on + Claude session alive. Defeats "away from computer" if user is the one telling Claude.
+```js
+import { defineConfig } from '@playwright/test';
 
-**Tension:** user is on phone, but Claude Code session runs *somewhere* — almost certainly user's PC. If PC is on, (b) works. If PC is off, user can't talk to Claude at all (no session).
+export default defineConfig({
+  testDir: 'tests',
+  use: {
+    baseURL: 'http://localhost:8080',
+    trace: 'retain-on-failure',
+    viewport: { width: 800, height: 700 }, // canvas 640x512 + shop chrome
+  },
+  webServer: {
+    command: 'npx http-server -p 8080 -c-1 -s',
+    url: 'http://localhost:8080',
+    reuseExistingServer: true,
+  },
+  projects: [
+    {
+      name: 'default',
+      testIgnore: ['**/visual/**'],
+    },
+    {
+      name: 'visual',
+      testMatch: ['**/visual/**'],
+      use: { video: 'on' },
+    },
+  ],
+  reporter: 'list',
+});
+```
 
-**Resolution candidate:** (b) is sufficient. The "away from computer" use case = user away from keyboard, not PC off. PC stays on, Claude session running, user phones in via Claude mobile / web.
+Separate project ensures `npm test` (default) skips visual specs (faster, no video overhead) and `npm run review` runs only visual specs with video.
 
-**User to confirm:** does Claude session run on your PC, or somewhere remote?
+### `package.json` — add script
 
-### 2. What does a "visual test" script look like?
+```json
+"scripts": {
+  ...existing...,
+  "review": "playwright test --project=visual"
+}
+```
 
-Per-change, dev writes a Playwright spec that:
-- boots game with seeded state
-- drives inputs to reach the scenario
-- takes screenshots at N beats
-- writes labeled PNGs to `test-output/visual/<feature>/<beat>.png`
+### `tests/visual/example.spec.js` — template
 
-No `expect()` calls. Pure capture.
+```js
+import { test } from '@playwright/test';
 
-Open Q: how many beats per script? Lean 3-8. More = more for Claude to read = more tokens.
+// expect: player walks right, slashes a grass tile directly to its right.
+// Grass should pop, gem spawns, gem flies into player and disappears (auto-magnet).
 
-### 3. How does Claude know what to look for?
+test('slash → grass cut → gem pickup', async ({ page }) => {
+  await page.goto('/?test=1');
+  await page.waitForFunction(() => window.__test);
 
-User says "review sprite facing direction fix" → Claude needs to know the spec.
+  await page.evaluate(() => {
+    const t = window.__test;
+    t.skipIntro();
+    t.clearGrasses();
+    t.player.x = 100;
+    t.player.y = 100;
+    t.player.facing = 0; // right
+    t.grasses.push({
+      x: 130, y: 100, alive: true,
+      respawnTimer: 0, respawnTime: 999999,
+      hue: 100, flip: false,
+    });
+    t.setUpgradeLevel('magnet', 5);
+  });
 
-- (a) Dev's playwright spec includes a comment block describing intent (`// expect: head back-of-skull visible from behind, no eyes`). Claude reads the spec + PNGs together.
-- (b) User describes in chat each time. More flexible, more user effort.
+  // drive 60 frames of scene before slash so viewer can see setup
+  await page.evaluate(() => window.__test.tick(60));
+  await page.evaluate(() => window.__test.press('Space'));
+  await page.evaluate(() => window.__test.tick(120));
+});
+```
 
-Lean (a). Spec self-documents.
+Spec is short. Setup → optional warm-up ticks (so viewer sees the scene) → input → enough ticks for the consequence to play out.
 
-### 4. Cloud artifact storage — needed at all?
+### `.github/workflows/visual-review.yml`
 
-If architecture (b) above wins (local run), **no cloud needed**. Skip entirely.
+```yaml
+name: Visual Review
 
-If (a) wins, GH artifacts free tier is enough. No need for R2/S3.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/visual/**'
+      - 'src/**'
+      - 'index.html'
+      - 'playwright.config.js'
+  workflow_dispatch:
 
-### 5. Video — capture at all?
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run review
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visual-review-${{ github.sha }}
+          path: test-results/
+          retention-days: 30
+```
 
-Even if Claude can't watch video, user *could* download artifact and watch on phone for hard-to-screenshot cases (animation timing, etc.). Playwright `video: 'on'` is one config line.
+`continue-on-error` because visual specs have no `expect()` — they should always "pass" in Playwright's sense, but if something throws we still want the artifact (partial video) uploaded.
 
-- (a) Yes, capture video alongside PNGs. ~few MB per test. Negligible cost.
-- (b) No, PNGs only. Smaller artifact, faster run.
+`src/**` + `index.html` triggers re-recording when game logic changes even if no new visual spec was added — so existing baselines stay current. Tradeoff: every src push gets a video run. If cost matters later, restrict to `tests/visual/**` only.
 
-Lean (a). Cheap insurance.
+### `.gitignore`
 
-### 6. Naming / convention
+Already covers `test-results/` (added with test harness).
 
-- Specs: `tests/visual/<feature>.spec.js`?
-- Output: `test-output/visual/<feature>/<beat>.png`?
-- npm script: `npm run review <feature>`?
+## Workflow
 
-TBD.
+1. Manager picks up a `verify: visual` (or mixed) TODO. Dispatches dev with item text.
+2. Dev edits `src/` for the change.
+3. Dev creates `tests/visual/<slug>.spec.js` with `// expect:` header + setup + drive + tick.
+4. Dev does NOT run video locally (slow, requires playwright install). Dev runs `npm run build` to confirm no errors. Spec is shipped untested locally.
+5. Dev commits src + visual spec together. Returns to manager.
+6. User pushes (existing flow).
+7. GitHub Actions `visual-review.yml` fires on push.
+8. Manager reports to user: "Visual review run triggered, artifact will be at `https://github.com/dtan3847/grass-slasher/actions` in ~2 min."
+9. User opens GitHub Actions on phone, downloads `visual-review-<sha>.zip`, watches `video.webm`.
+10. User decides pass/fail. If fail: respawn dev with corrections. If pass: manager moves TODO to DONE.
 
-## Tentative file list (if approach b + local)
+## Spec lifetime
 
-- `tests/visual/*.spec.js` — capture scripts
-- `playwright.config.js` — adds `visual` project with `video: 'on'`, screenshot on demand
-- `package.json` — script `"review": "playwright test --project=visual"`
-- `.gitignore` — `test-output/`
+Visual specs are NOT throwaway. They stay in `tests/visual/` indefinitely as:
+- Documentation: `// expect:` header + driving code shows what the feature does.
+- Regression baseline: rerunnable any time to re-capture current behavior.
+- Trigger source: any src change re-records ALL existing visual specs, so visual regressions surface as a video diff (the user catches them on next push).
 
-Reuses test harness infra from `test-harness.md`. Do that plan first.
+A spec may be deleted only if the feature it documents is removed entirely.
 
-## Decision needed before dispatch
+## Open Qs (parked, decide later if they bite)
 
-- Q1 confirm: is local-run sufficient (Claude session on user PC)?
-- Q2: screenshot beat count guideline.
-- Q3: spec self-document vs chat-describe.
-- Q5: video alongside PNGs y/n.
-- Q6: naming.
+- **Spec runtime cost.** Each spec adds ~10-30s to Actions run. If `tests/visual/` grows to 50 specs, run time bloats. Mitigations: matrix-parallelize specs, or split into `tests/visual/active/` (run every push) vs `tests/visual/archive/` (manual-only).
+- **Diff-friendly review.** Currently user watches whole video. If they want side-by-side "before/after" they'd compare current artifact to prior run's artifact manually. Could ship a `tests/visual/<slug>.baseline.webm` checked into git (LFS) for diff anchoring, but adds complexity. Skip for now.
+- **Audio.** Game is silent currently. Skip Playwright audio config.
+
+## Dispatch checklist (when this plan ships)
+
+Dev's spawn should:
+- Edit `playwright.config.js` to add `projects` with `default` + `visual` split, viewport 800×700.
+- Add `"review"` script to `package.json`.
+- Create `tests/visual/example.spec.js` as template.
+- Create `.github/workflows/visual-review.yml`.
+- Run `npm run build` to confirm config still parses.
+- Do NOT run `npm run review` locally (would require playwright install + ~2min run, no benefit).
+- Commit. Manager updates dev agent prompt + CLAUDE.md separately to wire `verify: visual` into the workflow.
 
 ## Dependencies
 
-Requires `test-harness.md` shipped first (shares Playwright config, in-page hooks, server setup).
+Requires `test-harness.md` (shipped, commit `39a31a7`). Reuses `window.__test` hooks, http-server, Playwright base config.

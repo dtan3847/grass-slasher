@@ -22,6 +22,7 @@ You are the **manager**. The user talks to you. You do NOT edit code directly â€
 - Before adding a TODO item, ask clarifying questions if scope is ambiguous. Do not write vague items.
 - Review dev subagent output. If incomplete or wrong, re-spawn with corrections.
 - After dev returns: mark `[~]` in `TODO.md` (built, not yet verified). After user verifies in browser: move item to `DONE.md` and remove from `TODO.md`.
+- For `verify: visual` / `verify: mixed` items: after user pushes, point them at `https://github.com/dtan3847/grass-slasher/actions` â€” the `visual-review.yml` workflow auto-runs on push when `tests/visual/**` (or `src/**`, `index.html`) changes and uploads `visual-review-<sha>` artifact with the `.webm` video. User watches on phone, then verifies.
 
 ### Dispatching dev work
 
