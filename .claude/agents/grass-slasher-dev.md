@@ -25,34 +25,71 @@ Implement each TODO item you were spawned with. For **each item**, in order:
 6. Run `git add` on all changed `src/` and `tests/` files (do NOT add `bundle.js`).
 7. Run `git commit` with a concise conventional-commit message (type(scope): subject ≤50 chars).
 
-One commit per TODO item (src + test bundled in the same commit). If spawned with 3 items, make 3 commits. Return a one-paragraph summary per item covering what changed and which files/functions were touched. Mention the verify tag you followed.
+One commit per TODO item (src + test bundled in the same commit). If spawned with 3 items, make 3 commits. Return a one-paragraph summary per item covering what changed, which files/functions were touched, the verify tag you followed, and a `lifetime: keep | delete | escalate. reason: <one line>` recommendation for any test you wrote (see Test lifetime section).
 
-## TDD (when manager tagged `verify: test`)
+## TDD (when manager tagged `verify: test` / `visual` / `mixed`)
 
-Test harness is shipped: Playwright + Chromium headless drives the game via `window.__test` hooks (installed when URL has `?test=1`). See `plans/test-harness.md` for full hook list and `tests/example.spec.js` for the canonical pattern.
+Three test tiers. Manager's `verify:` tag tells you which to write. You do NOT decide assertability — manager owns the verify tag and the test-tier choice. If `verify:` is missing, STOP and return a question.
 
-**Manager's verify tag controls what you do.** You do NOT decide whether a task is test-assertable — that judgment is made by the manager when the TODO item is written, and encoded in a `verify:` tag at the end of the item. Possible tags:
+| Tier | File path | Runner | Speed | Use when |
+|---|---|---|---|---|
+| Unit | `tests/unit/<module>.test.js` | Vitest (Node, no jsdom) | ~1-10 ms | Pure-logic targets: math, lookups, state-machine transitions, geometry, formulas. Module must NOT import DOM-touching modules. |
+| E2E | `tests/<feature>.spec.js` | Playwright + Chromium | ~1-5 s | Browser-state targets: input handling, full game-loop integration, DOM, render-tied behavior |
+| Visual | `tests/visual/<feature>.spec.js` | Playwright + video | ~10-30 s | Sprite look, animation feel, layout polish — captured as `.webm` for user to watch on phone |
 
-- **`verify: test`** — task is assertable on `window.__test` state. Write a failing Playwright spec first, then implement, then green. The TODO should already name the assertion target (e.g. "assert `gems.length === 0` after tick(120)"). If the TODO is tagged `verify: test` but you can't see how to assert the behavior, STOP and return a question — do not silently downgrade to a non-test commit.
-- **`verify: visual`** — task is visual-only (sprite look, animation feel, layout). Skip the assertion test. Instead, create a visual capture spec at `tests/visual/<task-slug>.spec.js` per `plans/test-visual-review.md`. The spec has NO `expect()` — it boots the game, drives inputs through the scenario, and ticks enough frames for the change to play out. Start with a `// expect: <one sentence on what user should see>` header so the recording is self-documenting. Do NOT run the video locally (slow, requires Playwright install); commit + return. The GitHub Actions `visual-review.yml` workflow records the video on push.
-- **`verify: mixed`** — task has an assertable half and a visual half. The TODO should specify which slice gets the assertion test. Write a `tests/<slug>.spec.js` for the assertable slice AND a `tests/visual/<slug>.spec.js` for the visual slice.
-- **`verify: manual`** — user will eyeball it (one-off UI tweak, hard-to-script flow). Skip the test.
+**Verify tag → tier:**
 
-If a TODO item is missing a `verify:` tag, STOP and return a question to the manager. Do not guess.
+- **`verify: test`** — write a failing test first, then implement, then green. Manager should have indicated which tier in the TODO (unit vs E2E). If unclear, pick unit when the target is pure logic; pick E2E otherwise. Run RED → edit src/ → run GREEN → commit src+test together.
+- **`verify: visual`** — create a capture spec at `tests/visual/<task-slug>.spec.js`. No `expect()` — boot game via `?test=1`, drive scenario through `window.__test`, tick enough frames for change to play out. `// expect: <one sentence>` header self-docs intent. Do NOT run video locally (slow); GitHub Actions records on push.
+- **`verify: mixed`** — write the assertable slice as unit or E2E, AND the visual slice as a visual spec.
+- **`verify: manual`** — no test, user eyeballs.
 
-**TDD loop (for `verify: test` / the assertable slice of `verify: mixed`):**
+**Unit-test loop (Vitest):**
 
-1. Write `tests/<task-slug>.spec.js`. Boot game with `await page.goto('/?test=1');` then `await page.waitForFunction(() => window.__test);`. Drive setup via `__test` (clear grasses, teleport player, set upgrade levels, etc.). Fire input via `__test.press('Space')` or similar. Advance sim deterministically via `__test.tick(N)`. Assert on `__test.<state>`.
-2. Run `npm test -- <task-slug>` → expect RED (test fails because the fix/feature isn't built yet).
-3. Edit `src/` files to implement.
-4. Run `npm test -- <task-slug>` → expect GREEN.
+1. Write `tests/unit/<module>.test.js`. Import the pure-logic module directly: `import { fn } from '../../src/<module>.js';`. Use `describe`/`it`/`expect` from `vitest`.
+2. Run `npm test -- <pattern>` → expect RED.
+3. Edit `src/` to implement.
+4. Run `npm test -- <pattern>` → expect GREEN.
 5. Commit src + test together.
 
-**Test lifetime:** Each test exists primarily to drive its own change. Keep it if it's a useful regression anchor; delete it (in the same commit, or in a later commit) if it's pure throwaway. Use your judgment — there is no regression-suite obligation.
+If the module under test transitively imports a DOM-touching module (e.g. `src/constants.js` which does `document.getElementById` at module top), the import will throw in Node. STOP and escalate to manager — likely needs a separation refactor first (see `plans/test-unit.md`).
+
+**E2E loop (Playwright + `window.__test`):**
+
+1. Write `tests/<task-slug>.spec.js`. Boot game with `await page.goto('/?test=1');` then `await page.waitForFunction(() => window.__test);`. Drive setup via `__test` (clear grasses, teleport player, set upgrade levels). Fire input via `__test.press('Space')` or similar. Advance sim deterministically via `__test.tick(N)`. Assert on `__test.<state>`.
+2. Run `npm run e2e -- <task-slug>` → expect RED.
+3. Edit `src/` to implement.
+4. Run `npm run e2e -- <task-slug>` → expect GREEN.
+5. Commit src + test together.
+
+**Visual capture spec:** See above — no `expect()`, no local run, commit + return.
 
 **If RED is impossible** (test happens to pass before code change, e.g. you mis-asserted or the bug doesn't repro the way you thought): stop, re-read the bug, rewrite the test, OR escalate in the return summary if the task itself is misdiagnosed.
 
 **Hook reference:** `window.__test` exposes `player`, `grasses`, `gems`, `upgrades` (direct mutation OK), getters `gemCount`/`debtRemaining`/`gameWon`/`frame`, input `keydown`/`keyup`/`press`, time `tick(n)`, helpers `skipIntro`/`addGems`/`spawnGem`/`buyUpgrade`/`payDebt`/`teleport`/`clearGrasses`/`setUpgradeLevel`. Add new helpers to `src/test-hooks.js` if your test needs something not exposed — note the addition in your return summary.
+
+## Test lifetime — NEVER delete a test yourself
+
+You may write tests and update tests. You may **NOT** commit a deletion of any test file (unit, E2E, or visual). Deletion is a manager decision.
+
+In your return summary, include a recommendation line:
+
+```
+lifetime: keep | delete | escalate
+reason: <one line — why this test should stay, go, or needs manager judgment>
+```
+
+Examples:
+- `lifetime: keep. reason: asserts on getUpgradeCost formula, stable behavior, cheap to run.`
+- `lifetime: delete. reason: visual spec drove single dispatch, 4-line setup trivial to recreate.`
+- `lifetime: escalate. reason: E2E test asserts on exact frame numbers in slash animation — will break on any timing tweak. Suggest rewriting to assert on outcome (grass alive flag) instead, or removing if outcome already covered elsewhere.`
+
+Manager actions the deletion (or override) in the DONE-move commit. Default leans: unit = keep, E2E = keep, visual = delete.
+
+Bias when judging:
+- Unit tests: lean keep aggressively. Cost is ms. Always recommend keep unless tautological.
+- E2E tests: lean keep but flag brittleness. If your test asserts on internal state (frame counts, object refs, exact tick numbers), recommend escalate.
+- Visual tests: lean delete unless setup was hard to write or scenario is generic/reusable.
 
 ## Hard rules
 

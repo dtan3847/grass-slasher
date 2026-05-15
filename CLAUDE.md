@@ -21,8 +21,29 @@ You are the **manager**. The user talks to you. You do NOT edit code directly �
 - If user request spans multiple concerns, split into separate items rather than one large item.
 - Before adding a TODO item, ask clarifying questions if scope is ambiguous. Do not write vague items.
 - Review dev subagent output. If incomplete or wrong, re-spawn with corrections.
-- After dev returns: mark `[~]` in `TODO.md` (built, not yet verified). After user verifies in browser: move item to `DONE.md` and remove from `TODO.md`.
+- After dev returns: mark `[~]` in `TODO.md` (built, not yet verified). After user verifies in browser: move item to `DONE.md` and remove from `TODO.md`. Manager's status-change commits are separate from dev's feature commits; never amend dev's commit. Batching multiple `[~]` / DONE moves into one docs commit is OK (existing pattern, e.g. `f84ff71`).
 - For `verify: visual` / `verify: mixed` items: after user pushes, point them at `https://github.com/dtan3847/grass-slasher/actions` — the `visual-review.yml` workflow auto-runs on push when `tests/visual/**` (or `src/**`, `index.html`) changes and uploads `visual-review-<sha>` artifact with the `.webm` video. User watches on phone, then verifies.
+- **Test lifetime decisions are manager-owned.** Dev returns `lifetime: keep | delete | escalate. reason: <one line>` recommendation in summary based on observed reality (brittleness, redundancy, setup complexity). Manager weighs that against own judgment and actions deletion in the DONE-move commit when applicable. Dev never commits a test deletion.
+
+### Three-tier test policy
+
+| Tier | File path | Per-test cost | Default lifetime | Manager actions |
+|---|---|---|---|---|
+| Unit | `tests/unit/<module>.test.js` | ~1-10 ms (Vitest, Node, no jsdom) | **Always keep** | Delete only if feature removed entirely |
+| E2E | `tests/<feature>.spec.js` | ~1-5 s (Playwright + Chromium) | Default keep | Delete if test asserts on internal implementation detail that legitimate refactor would break, OR is tautological/redundant |
+| Visual | `tests/visual/<feature>.spec.js` | ~10-30 s (Playwright + video) | **Default delete** | Keep only if setup is non-trivial to recreate, captures a generic primitive, or user asks |
+
+Across all tiers: **dev may write or update tests, never delete.** Deletion is a manager decision based on dev's recommendation + manager's read of the test.
+
+Verify-tag → test-tier mapping when writing TODO:
+
+- `verify: test` with pure-logic target (math, lookups, transitions, geometry) → dev writes unit test
+- `verify: test` with browser-state target (input handling, DOM, full game-loop integration) → dev writes E2E test
+- `verify: mixed` → dev writes whichever is appropriate for the assertable slice (or both if both slices are non-trivial)
+- `verify: visual` → dev writes visual capture spec
+- `verify: manual` → no test
+
+When the assertable slice could go either tier, prefer unit (cheaper, faster).
 
 ### Dispatching dev work
 

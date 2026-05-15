@@ -165,12 +165,20 @@ Already covers `test-results/` (added with test harness).
 
 ## Spec lifetime
 
-Visual specs are NOT throwaway. They stay in `tests/visual/` indefinitely as:
-- Documentation: `// expect:` header + driving code shows what the feature does.
-- Regression baseline: rerunnable any time to re-capture current behavior.
-- Trigger source: any src change re-records ALL existing visual specs, so visual regressions surface as a video diff (the user catches them on next push).
+**Default: transient. Delete after user signs off.**
 
-A spec may be deleted only if the feature it documents is removed entirely.
+Visual specs are video-recorded — re-running gives a video, not a boolean signal, and nobody watches kept videos unless prompted. So the regression-baseline argument doesn't pay off automatically (unlike unit/E2E asserts which run as boolean checks on every push). Default is therefore delete, not keep.
+
+**Keep when:**
+- Setup is non-trivial to recreate manually (multi-room state, complex hook setup, scenario takes >20 lines of driving code).
+- Spec captures a generic primitive (slash arc behavior, gem magnet) rather than a feature-specific scene — likely reused.
+- User explicitly asks to keep as ongoing snapshot.
+
+**Workflow:**
+- Dev writes spec, implements, commits with src/.
+- Dev returns summary with `lifetime: keep | delete | escalate. reason: <one line>` recommendation based on observed setup complexity.
+- Manager actions deletion (or keep) during the verify → DONE-move commit. Dev never commits the deletion themselves.
+- Override dev's recommendation when needed.
 
 ## Open Qs (parked, decide later if they bite)
 
