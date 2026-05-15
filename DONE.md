@@ -1,5 +1,7 @@
 # Grass Slasher — Completed Items
 
+- [x] [feature] editor click-and-drag paint — mousedown locks `strokeTarget` to current paint mode, mousemove paints idempotently while held, mouseup/mouseleave ends stroke. Event delegation on `#tile-grid`. `paintTile` gained bounds-check + optional `mode` param.
+
 - [x] [feature] magnet upgrade — gems within range pulled toward player; existing pickupDist=14 still grants pickup. `magnet: { level: 0, baseCost: 25, costMult: 1.6, maxLevel: 5 }` in `src/upgrades.js`. Range = `level * 25` px (lv5 = 125). Pull = `0.5*(1-dist/range) + 0.15` toward player, overcomes damping. Resting gems unset `rest` when in range. Shop button `btn-magnet` (🧲). Note: circular import gems↔upgrades introduced; tracked as separate refactor TODO.
 
 - [x] [feature] TDD test harness — Playwright + in-page `window.__test` hooks (`?test=1` gate). `installTestHooks` in `src/test-hooks.js`, called conditionally from `src/main.js` after `update()` defined. Exposes direct refs (`player`, `grasses`, `gems`, `upgrades`), getters for `export let` bindings, input helpers (`keydown`/`keyup`/`press`), `tick(n)` calling `update()` directly, mutation helpers (`teleport`, `clearGrasses`, `setUpgradeLevel`, `addGems`, `spawnGem`, `buyUpgrade`, `payDebt`, `skipIntro`). Playwright + http-server (port 8080) added as devDeps. Example spec green. See `plans/test-harness.md`.
