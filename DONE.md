@@ -2,6 +2,8 @@
 
 - [x] [ux] sprite facing direction — up-facing distinct from front/side via eye-skip (no separate hat band branch). Hat triangle, face, body, belt drawn unconditionally; eyes wrapped in `if (!facingUp)`. Anime-sized head (14×9 face) + bigger eyes (3×3). Hat + body + belt recolored royal purple (`#5a3a8c` / `#7a52b0`) so player no longer blends with grass.
 
+- [x] [feature] deploy to GH Pages + itch.io — `.github/workflows/deploy.yml` builds with `npm run build` on push to `main`, deploys to GH Pages (`actions/deploy-pages@v4`) and itch.io (butler). `bundle.js` gitignored, CI builds fresh.
+
 - [x] [ux] sword z-order + tail origin — sword draws BEFORE body parts for up/left/right (renders behind player), conditionally AFTER body for down-slash (`slashCardinal === 1`). Tail extended toward player center (`(0, -3, swordLen+9, 6)`) for up/left/right; original `(9, -3, swordLen, 6)` retained for down-slash so tail starts at hand.
 - [x] [feature] debug free-upgrade mode — new `src/debug.js` with `debugMode` + `setDebugMode`. While debug on (backtick), `buyUpgrade` bypasses gem-cost check. updateUI also disables-gate respects debug mode so buttons remain clickable.
 - [x] [refactor] cap all upgrades at lv20 — `gemMult`/`slashRange`/`autoSlash` now `maxLevel: 20`. magnet bumped 5 → 20.
