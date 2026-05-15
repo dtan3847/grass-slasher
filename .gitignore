@@ -5,3 +5,4 @@ playwright-report/
 test-results/
 /playwright/.cache/
 .claude/settings.local.json
+commit-msg.tmp
