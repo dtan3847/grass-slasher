@@ -7,12 +7,12 @@ import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY, PAYMENT_ZONE } from './world.js';
 import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn, drawJoystick } from './render.js';
 import { installTestHooks } from './test-hooks.js';
+import { debugMode, setDebugMode } from './debug.js';
 
 window.buyUpgrade = buyUpgrade;
 window.toggleAutoSlash = function() { autoSlashEnabled = !autoSlashEnabled; };
 
 let introShown = false;
-let debugMode = false;
 let debugLog  = [];
 let slashRecords = [];
 let currentSlashRecord = null;
@@ -337,7 +337,7 @@ document.addEventListener('keydown', e => {
   if (gameWon && (e.code === 'Enter' || e.code === 'KeyZ' || e.code === 'Space')) { gameWon = false; e.preventDefault(); return; }
   keys[e.code] = true;
   if (e.code === 'Backquote') {
-    debugMode = !debugMode;
+    setDebugMode(!debugMode);
     return;
   }
   if (e.code === 'KeyM' && debugMode) {

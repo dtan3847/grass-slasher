@@ -1,4 +1,5 @@
 import { spendGems, gemCount } from './gems.js';
+import { debugMode } from './debug.js';
 
 export const upgrades = {
   gemMult:    { level: 0, baseCost: 10,  costMult: 1.6, maxLevel: 20 },
@@ -18,7 +19,7 @@ export function buyUpgrade(id) {
   const u = upgrades[id];
   if (u.maxLevel !== undefined && u.level >= u.maxLevel) return;
   const cost = getUpgradeCost(id);
-  if (gemCount < cost) return;
-  spendGems(cost);
+  if (gemCount < cost && !debugMode) return;
+  if (gemCount >= cost) spendGems(cost);
   upgrades[id].level++;
 }
