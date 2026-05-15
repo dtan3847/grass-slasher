@@ -264,7 +264,7 @@ function updateUI() {
       btn.disabled  = true;
     } else {
       btn.innerHTML = `${label(lvl)} (${cost})`;
-      btn.disabled  = gemCount < cost;
+      btn.disabled  = gemCount < cost && !debugMode;
     }
     if (lvl > 0) btn.classList.add('leveled');
   }
@@ -333,7 +333,7 @@ function downloadLog() {
 }
 
 document.addEventListener('keydown', e => {
-  if (!introShown) { introShown = true; return; }
+  if (!introShown) { introShown = true; document.getElementById('shop').style.display = ''; return; }
   if (gameWon && (e.code === 'Enter' || e.code === 'KeyZ' || e.code === 'Space')) { gameWon = false; e.preventDefault(); return; }
   keys[e.code] = true;
   if (e.code === 'Backquote') {
@@ -362,7 +362,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 canvas.addEventListener('click', e => {
-  if (!introShown) { introShown = true; return; }
+  if (!introShown) { introShown = true; document.getElementById('shop').style.display = ''; return; }
   const rect = canvas.getBoundingClientRect();
   const mx = (e.clientX - rect.left) * (W / rect.width);
   const my = (e.clientY - rect.top)  * (H / rect.height);
@@ -402,7 +402,7 @@ canvas.addEventListener('touchstart', e => {
 
     if (rawX < midX) {
       // Left half: joystick
-      if (!introShown) { introShown = true; continue; }
+      if (!introShown) { introShown = true; document.getElementById('shop').style.display = ''; continue; }
       if (joystick === null) {
         const ax = rawX * scaleX;
         const ay = rawY * scaleY;
@@ -410,7 +410,7 @@ canvas.addEventListener('touchstart', e => {
       }
     } else {
       // Right half: slash
-      if (!introShown) { introShown = true; continue; }
+      if (!introShown) { introShown = true; document.getElementById('shop').style.display = ''; continue; }
       if (gameWon) continue;
       trySlash();
       logSlash();
