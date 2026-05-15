@@ -113,38 +113,21 @@ export function drawPlayer(px = player.x, py = player.y) {
   const sinF = Math.sin(player.facing);
   const facingUp = sinF < -0.5;
 
-  if (facingUp) {
-    // Back of head: body + belt same, head shown from behind
-    // Body
-    ctx.fillStyle = '#3d8b3d';
-    ctx.fillRect(-7, -2, 14, 14);
-    ctx.fillStyle = '#2d6b2d';
-    ctx.fillRect(-7, 10, 14, 2);
-    // Back of head (skin, slightly wider for anime proportion)
-    ctx.fillStyle = '#e8c46a';
-    ctx.fillRect(-7, -11, 14, 9);
-    // Hair bump visible above head on back-facing
-    ctx.fillStyle = '#5a3010';
-    ctx.fillRect(-5, -14, 10, 4);
-    // Hat band from behind (horizontal band, no brim)
-    ctx.fillStyle = '#2d6b2d';
-    ctx.fillRect(-7, -12, 14, 3);
-  } else {
-    // Front/side facing — anime proportions
-    // Hat (front brim triangle)
-    ctx.fillStyle = '#2d6b2d';
-    ctx.beginPath();
-    ctx.moveTo(-8, -10); ctx.lineTo(8, -10); ctx.lineTo(0, -17);
-    ctx.closePath(); ctx.fill();
-    // Face (slightly taller for anime head)
-    ctx.fillStyle = '#e8c46a';
-    ctx.fillRect(-7, -10, 14, 9);
-    // Body
-    ctx.fillStyle = '#3d8b3d';
-    ctx.fillRect(-7, -2, 14, 14);
-    // Belt
-    ctx.fillStyle = '#2d6b2d';
-    ctx.fillRect(-7, 10, 14, 2);
+  // Hat triangle (same for all directions)
+  ctx.fillStyle = '#5a3a8c';
+  ctx.beginPath();
+  ctx.moveTo(-8, -10); ctx.lineTo(8, -10); ctx.lineTo(0, -17);
+  ctx.closePath(); ctx.fill();
+  // Face
+  ctx.fillStyle = '#e8c46a';
+  ctx.fillRect(-7, -10, 14, 9);
+  // Body
+  ctx.fillStyle = '#7a52b0';
+  ctx.fillRect(-7, -2, 14, 14);
+  // Belt
+  ctx.fillStyle = '#5a3a8c';
+  ctx.fillRect(-7, 10, 14, 2);
+  if (!facingUp) {
     // Eyes: anime-larger (3x3), offset by cos(facing)
     ctx.fillStyle = '#222';
     const ex = Math.cos(player.facing) * 2;
