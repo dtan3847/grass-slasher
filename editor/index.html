@@ -299,17 +299,24 @@
 
     const tileGrid = document.getElementById('tile-grid');
 
+    tileGrid.addEventListener('contextmenu', e => { e.preventDefault(); });
+
     tileGrid.addEventListener('mousedown', e => {
       if (!state) return;
       e.preventDefault();
       isPainting = true;
-      strokeTarget = paintMode;
+      strokeTarget = e.button === 2 ? 'empty' : paintMode;
       const { col, row } = tileFromEvent(e);
       paintTile(col, row, strokeTarget);
     });
 
     tileGrid.addEventListener('mousemove', e => {
       if (!isPainting) return;
+      const leftHeld  = (e.buttons & 1) !== 0;
+      const rightHeld = (e.buttons & 2) !== 0;
+      const strokeIsRight = strokeTarget === 'empty' && !leftHeld && rightHeld;
+      const strokeIsLeft  = strokeTarget !== 'empty' && leftHeld  && !rightHeld;
+      if (!strokeIsRight && !strokeIsLeft) return;
       const { col, row } = tileFromEvent(e);
       paintTile(col, row, strokeTarget);
     });
