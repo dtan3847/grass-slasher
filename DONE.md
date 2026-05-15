@@ -2,6 +2,13 @@
 
 - [x] [ux] sprite facing direction — up-facing distinct from front/side via eye-skip (no separate hat band branch). Hat triangle, face, body, belt drawn unconditionally; eyes wrapped in `if (!facingUp)`. Anime-sized head (14×9 face) + bigger eyes (3×3). Hat + body + belt recolored royal purple (`#5a3a8c` / `#7a52b0`) so player no longer blends with grass.
 
+- [x] [bug] Z/Space dismiss win screen — extended win-screen keydown guard from Enter only to Enter/KeyZ/Space with preventDefault.
+- [x] [bug] `Press E to pay debt` prompt shown when poor — added `gemCount >= debtRemaining` to prompt-display condition.
+
+- [x] [bug] auto-slash blocks E key pay-debt — removed `player.slashState === 'idle'` gate from E handler.
+- [x] [ux] debt counter format — dropped ` / 500` suffix from display + initial HTML.
+- [x] [bug] partial debt payment allowed — added `gemCount >= debtRemaining` gate to E handler.
+
 - [x] [feature] editor right-click erases — right-button paints with `'empty'`. Right-drag erases across stroke. `contextmenu` suppressed. `mousemove` guard via `e.buttons` bitmask.
 
 - [x] [feature] editor click-and-drag paint — mousedown locks `strokeTarget` to current paint mode, mousemove paints idempotently while held, mouseup/mouseleave ends stroke. Event delegation on `#tile-grid`. `paintTile` gained bounds-check + optional `mode` param.

@@ -110,7 +110,8 @@ export function drawPlayer(px = player.x, py = player.y) {
   ctx.ellipse(0, 14, 9, 3, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  if (player.slashState !== 'idle') {
+  // Sword behind body for all cardinals except down (cardinal 1)
+  if (player.slashState !== 'idle' && player.slashCardinal !== 1) {
     const arc = SLASH_ARCS[player.slashCardinal];
     let angle, swordLen;
     if (player.slashState === 'sweeping') {
@@ -156,6 +157,30 @@ export function drawPlayer(px = player.x, py = player.y) {
     const ex = Math.cos(player.facing) * 2;
     ctx.fillRect(-4 + ex, -8, 3, 3);
     ctx.fillRect( 1 + ex, -8, 3, 3);
+  }
+
+  // Sword in front of body for down-cardinal slash (comes toward camera)
+  if (player.slashState !== 'idle' && player.slashCardinal === 1) {
+    const arc = SLASH_ARCS[player.slashCardinal];
+    let angle, swordLen;
+    if (player.slashState === 'sweeping') {
+      const t = 1 - player.slashTimer / player.sweepDur;
+      angle    = arc.start + t * arc.delta;
+      swordLen = player.slashRange - 9;
+    } else {
+      angle    = arc.start + arc.delta;
+      const t  = player.slashTimer / player.retractDur;
+      swordLen = (player.slashRange - 9) * t;
+    }
+    if (swordLen > 1) {
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.fillStyle = 'rgba(220, 235, 255, 0.92)';
+      ctx.fillRect(0, -3, swordLen + 9, 6);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.fillRect(0, -3, swordLen + 9, 2);
+      ctx.restore();
+    }
   }
 
   ctx.restore();
