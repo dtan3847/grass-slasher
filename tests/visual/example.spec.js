@@ -22,8 +22,7 @@ test('slash → grass cut → gem pickup', async ({ page }) => {
     t.setUpgradeLevel('magnet', 5);
   });
 
-  // drive 60 frames of scene before slash so viewer can see setup
-  await page.evaluate(() => window.__test.tick(60));
+  await page.waitForTimeout(1000);
   await page.evaluate(() => window.__test.press('Space'));
-  await page.evaluate(() => window.__test.tick(120));
+  await page.waitForTimeout(2000);
 });
