@@ -34,6 +34,7 @@ export function initGrass() { loadRoom(roomX, roomY); }
 export function checkSlashHits(sweepAngle, recordTarget, prevAngle) {
   const wedgePart = getSlashHitbox(player.slashCardinal)[0];
   const coarseReach = wedgePart.reach + 13;
+  const gemCountBefore = gems.length;
 
   for (const g of grasses) {
     if (!g.alive) continue;
@@ -70,7 +71,9 @@ export function checkSlashHits(sweepAngle, recordTarget, prevAngle) {
   }
 
   if (upgrades.magnetSword.level > 0) {
-    for (const gm of gems) {
+    for (let i = gemCountBefore - 1; i >= 0; i--) {
+      const gm = gems[i];
+      if (gm.magnetSwordHit) continue;
       const dx = gm.x - player.x;
       const dy = gm.y - player.y;
       if (dx * dx + dy * dy > coarseReach * coarseReach) continue;
@@ -84,9 +87,14 @@ export function checkSlashHits(sweepAngle, recordTarget, prevAngle) {
       }
       if (hit && dist > 0) {
         gm.rest = false;
-        const pull = 2 + upgrades.magnetSword.level * 1.5;
-        gm.vx += (-dx / dist) * pull;
-        gm.vy += (-dy / dist) * pull;
+        gm.magnetSwordHit = true;
+        const pull = 1.5 + upgrades.magnetSword.level * 0.8;
+        const jitter = (Math.random() - 0.5) * 0.4;
+        const cos = Math.cos(jitter), sin = Math.sin(jitter);
+        const nx = (-dx / dist) * cos - (-dy / dist) * sin;
+        const ny = (-dx / dist) * sin + (-dy / dist) * cos;
+        gm.vx += nx * pull;
+        gm.vy += ny * pull;
       }
     }
   }

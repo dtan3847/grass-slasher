@@ -134,14 +134,21 @@ test('lv1 magnetSword — gem in arc is pulled and collected', async ({ page }) 
     t.player.slashTimer = 0;
     t.setUpgradeLevel('magnet', 0);
     t.setUpgradeLevel('magnetSword', 1);
-    // gem in the top-right arc quadrant, within slashRange=44
-    t.gems.push({ x: 190, y: 98, vx: 0, vy: 0, rest: true, amount: 1, tier: 0, baseValue: 1, life: 1800, bob: 0 });
+    // gem directly above player at dist=44, angle=-PI/2 (start of right arc)
+    // one-shot pull=2.3 carries it down to within 14px in ~27 ticks
+    t.gems.push({ x: 160, y: 84, vx: 0, vy: 0, rest: true, amount: 1, tier: 0, baseValue: 1, life: 1800, bob: 0 });
   });
 
   await page.evaluate(() => {
     window.__test.keydown('Space');
-    window.__test.tick(120);
+    window.__test.tick(10);
   });
+
+  // gem should still exist after 10 ticks (not instant teleport with one-shot impulse)
+  const lenMid = await page.evaluate(() => window.__test.gems.length);
+  expect(lenMid).toBe(1);
+
+  await page.evaluate(() => window.__test.tick(50));
 
   const len = await page.evaluate(() => window.__test.gems.length);
   expect(len).toBe(0);
@@ -172,6 +179,37 @@ test('lv1 magnetSword — gem outside arc is not pulled', async ({ page }) => {
     window.__test.tick(60);
   });
 
+  const len = await page.evaluate(() => window.__test.gems.length);
+  expect(len).toBe(1);
+});
+
+test('lv1 magnetSword — gem spawned by slash is not pulled', async ({ page }) => {
+  await page.goto('/?test=1');
+  await page.waitForFunction(() => window.__test);
+
+  await page.evaluate(() => {
+    const t = window.__test;
+    t.skipIntro();
+    t.clearGrasses();
+    t.gems.length = 0;
+    t.player.x = 160;
+    t.player.y = 128;
+    t.player.facing = 0;
+    t.player.slashState = 'idle';
+    t.player.slashTimer = 0;
+    t.setUpgradeLevel('magnet', 0);
+    t.setUpgradeLevel('magnetSword', 1);
+    // grass at (176,96): angle=atan2(-32,16)≈-1.107 rad, dist≈35.8, in right-facing arc
+    // tick(15) is short enough that even max-speed random gem drift can't cover 35.8-14=21.8px
+    t.grasses.push({ x: 176, y: 96, alive: true, hue: 100, flip: false, cutAnim: 0, respawnTimer: 0, respawnTime: 300 });
+  });
+
+  await page.evaluate(() => {
+    window.__test.keydown('Space');
+    window.__test.tick(15);
+  });
+
+  // gem was spawned by the slash — must not have been pulled to player by magnetSword
   const len = await page.evaluate(() => window.__test.gems.length);
   expect(len).toBe(1);
 });

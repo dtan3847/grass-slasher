@@ -1,5 +1,6 @@
 import { W, H, TILE } from './geometry.js';
 import { upgrades } from './upgrades.js';
+import { gems } from './gems.js';
 
 export const SLASH_ARCS = [
   { start: -Math.PI/2, delta:  Math.PI/2 }, // right
@@ -79,6 +80,7 @@ export function startSweep(cardinal) {
       SLASH_ARCS[1] = { start: Math.PI, delta: -Math.PI / 2 };
     }
   }
+  for (const gm of gems) gm.magnetSwordHit = false;
   slashCount++;
 }
 
