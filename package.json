@@ -6,14 +6,17 @@
     "dev": "npx esbuild src/main.js --bundle --outfile=bundle.js --watch",
     "build": "npx esbuild src/main.js --bundle --outfile=bundle.js",
     "editor": "node editor/server.js",
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test --project=default",
+    "e2e:headed": "playwright test --project=default --headed",
+    "e2e:debug": "playwright test --project=default --debug",
     "review": "playwright test --project=visual"
   },
   "devDependencies": {
     "esbuild": "latest",
     "@playwright/test": "^1.48.0",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "vitest": "^2.0.0"
   }
 }
