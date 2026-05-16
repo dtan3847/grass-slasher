@@ -11,14 +11,15 @@ test('slash → grass cut → gem pickup', async ({ page }) => {
     const t = window.__test;
     t.skipIntro();
     t.clearGrasses();
-    t.player.x = 100;
-    t.player.y = 100;
+    t.player.x = 112; // tile (3,3) center
+    t.player.y = 112;
     t.player.facing = 0; // right
     t.grasses.push({
-      x: 130, y: 100, alive: true,
+      x: 176, y: 112, alive: true, // tile (5,3) center, 64px right
       respawnTimer: 0, respawnTime: 999999,
       hue: 100, flip: false,
     });
+    t.setUpgradeLevel('slashRange', 2); // reach 68px > 64px gap
     t.setUpgradeLevel('magnet', 5);
   });
 
