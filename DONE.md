@@ -1,5 +1,11 @@
 # Grass Slasher — Completed Items
 
+- [x] [feature] visual review via video artifact — Playwright `visual` project (separate from `default` E2E), `video: 'on'`, viewport 800×700. `tests/visual/example.spec.js` template uses `page.waitForTimeout()` (NOT `__test.tick()`) so rAF render loop captures wall-clock animation. Tile-center alignment: player+grass coords must be `col*32+16` to render centered. New `.github/workflows/visual-review.yml` runs on push when `tests/visual/**`/`src/**`/`index.html`/`playwright.config.js` changes, uploads `test-results/` as `visual-review-<sha>` zip (30-day). Dev does NOT run video locally; CI only.
+
+- [x] [feature] Vitest unit-test layer — `vitest.config.js` (Node env, `tests/unit/**/*.test.js`). `tests/unit/upgrades.test.js` asserts `getUpgradeCost('gemMult')` at lv0 + lv2. `package.json` scripts: `test`=vitest, `test:watch`, `e2e`/`e2e:headed`/`e2e:debug`=Playwright. `playwright.config.js` gained `testMatch: ['**/*.spec.js']` so Playwright doesn't try to load `.test.js` ESM files. `.github/workflows/deploy.yml` runs `npm test` before build. `upgrades.js → gems.js → render.js → canvas.js` import chain Node-safe because canvas.js has no top-level DOM access.
+
+- [x] [refactor] split `src/constants.js` → `src/geometry.js` + `src/canvas.js` — `geometry.js` exports pure numeric constants (TILE/COLS/ROWS/W/H/SCALE), Node-safe import. `canvas.js` exports `bootCanvas()` + live-binding `canvas`/`ctx` (initially `null`, populated by `bootCanvas()`). `bootCanvas()` called once from `src/main.js` module body after imports, before event listeners. Unblocked Vitest unit layer.
+
 - [x] [ux] sprite facing direction — up-facing distinct from front/side via eye-skip (no separate hat band branch). Hat triangle, face, body, belt drawn unconditionally; eyes wrapped in `if (!facingUp)`. Anime-sized head (14×9 face) + bigger eyes (3×3). Hat + body + belt recolored royal purple (`#5a3a8c` / `#7a52b0`) so player no longer blends with grass.
 
 - [x] [feature] deploy to GH Pages + itch.io — `.github/workflows/deploy.yml` builds with `npm run build` on push to `main`, deploys to GH Pages (`actions/deploy-pages@v4`) and itch.io (butler). `bundle.js` gitignored, CI builds fresh.
