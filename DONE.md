@@ -1,5 +1,12 @@
 # Grass Slasher — Completed Items
 
+- [x] [bug] slash misses grass at max sword size between angle frames — swept-arc test in `checkSlashHits`. Player tracks `prevSlashAngle`; each frame `checkSlashHits` accepts both prev + current angle, `testSweptArc` checks interval containment with sign-of-delta for sweep direction. Reset `prevSlashAngle` to null in `startSweep`. E2E spec `tests/slash-swept-arc.spec.js` places grass at midpoint angle between frame 0 and frame 1 of lv13 right-sweep (RED → GREEN).
+
+- [x] [feature] regrowth upgrade — one-time `regrowth: { baseCost: 60, maxLevel: 1 }` upgrade gates grass respawn. Shop button `btn-regrowth` (🌱). Removed "Grass regrows automatically" hint. Unit tests in `tests/unit/upgrades.test.js`; E2E `tests/regrowth.spec.js` (no respawn at lv0, respawn at lv1).
+
+- [x] [bug] player stuck after screen transition if rock at entry tile — new `src/transition-util.js` exports `snapEntryPosition`: scans perpendicular-to-travel tile centers outward from intended spawn, returns nearest unblocked. `startTransition` + `repositionPlayer` both call helper via new `blockedAtNewRoom` (reads `transition.toRX/toRY` not committed `roomX/roomY`). Unit tests `tests/unit/transition-util.test.js` cover 4 cardinals + multi-block + all-blocked fallback.
+
+
 - [x] [feature] visual review via video artifact — Playwright `visual` project (separate from `default` E2E), `video: 'on'`, viewport 800×700. `tests/visual/example.spec.js` template uses `page.waitForTimeout()` (NOT `__test.tick()`) so rAF render loop captures wall-clock animation. Tile-center alignment: player+grass coords must be `col*32+16` to render centered. New `.github/workflows/visual-review.yml` runs on push when `tests/visual/**`/`src/**`/`index.html`/`playwright.config.js` changes, uploads `test-results/` as `visual-review-<sha>` zip (30-day). Dev does NOT run video locally; CI only.
 
 - [x] [feature] Vitest unit-test layer — `vitest.config.js` (Node env, `tests/unit/**/*.test.js`). `tests/unit/upgrades.test.js` asserts `getUpgradeCost('gemMult')` at lv0 + lv2. `package.json` scripts: `test`=vitest, `test:watch`, `e2e`/`e2e:headed`/`e2e:debug`=Playwright. `playwright.config.js` gained `testMatch: ['**/*.spec.js']` so Playwright doesn't try to load `.test.js` ESM files. `.github/workflows/deploy.yml` runs `npm test` before build. `upgrades.js → gems.js → render.js → canvas.js` import chain Node-safe because canvas.js has no top-level DOM access.
