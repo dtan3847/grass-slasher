@@ -37,7 +37,7 @@ export function spawnGem(x, y, amount, tier) {
 
 export function updateGems(mult = 1) {
   const pickupDist = 14;
-  const magnetRange = upgrades.magnet.level > 0 ? 44 + upgrades.magnet.level * 12 : 0;
+  const magnetRange = upgrades.magnet.level > 0 ? 44 + upgrades.magnet.level * 6 : 0;
   for (let i = gems.length - 1; i >= 0; i--) {
     const gm = gems[i];
     const dx = player.x - gm.x;

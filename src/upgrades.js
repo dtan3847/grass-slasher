@@ -7,7 +7,7 @@ export const upgrades = {
   autoSlash:  { level: 0, baseCost: 50,  costMult: 2.2, maxLevel: 20 },
   gemTier:    { level: 0, baseCost: 30,  costMult: 2.0, maxLevel: 3 },
   moveSpeed:  { level: 0, baseCost: 25,  costMult: 1.8, maxLevel: 5 },
-  magnet:     { level: 0, baseCost: 25,  costMult: 1.6, maxLevel: 20 },
+  magnet:     { level: 0, baseCost: 25,  costMult: 1.6, maxLevel: 10 },
   regrowth:   { level: 0, baseCost: 60,  costMult: 1.0, maxLevel: 1 },
 };
 
