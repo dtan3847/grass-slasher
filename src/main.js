@@ -6,6 +6,7 @@ import { gemCount, addGems, updateGems, clearGems } from './gems.js';
 import { upgrades, getUpgradeCost, buyUpgrade } from './upgrades.js';
 import { debtRemaining, DEBT_TOTAL, payDebt, isDebtCleared } from './debt.js';
 import { transition, camera, getNeighbor, triggerTransition, advanceTransition, commitTransition, updateCamera, getCurrentRoom, getRoomPixelSize, getRockTiles, roomX, roomY, PAYMENT_ZONE } from './world.js';
+import { snapEntryPosition } from './transition-util.js';
 import { drawGround, drawGrass, drawGems, drawPlayer, drawRocks, drawParticles, drawFloats, drawTransition, updateParticles, drawDebug, drawDebugButton, drawIntro, drawPaymentZone, drawWinScreen, winContinueBtn, drawJoystick } from './render.js';
 import { installTestHooks } from './test-hooks.js';
 import { debugMode, setDebugMode } from './debug.js';
@@ -75,6 +76,19 @@ function applyMovement(stepX, stepY) {
   }
 }
 
+function blockedAtNewRoom(nx, ny) {
+  const halfSum = 7 + 11;
+  for (const g of grasses) {
+    if (!g.alive) continue;
+    if (Math.abs(g.x - nx) < halfSum && Math.abs(g.y - ny) < halfSum) return true;
+  }
+  const rocks = getRockTiles(transition.toRX, transition.toRY);
+  for (const r of rocks) {
+    if (Math.abs(r.x - nx) < halfSum && Math.abs(r.y - ny) < halfSum) return true;
+  }
+  return false;
+}
+
 function startTransition(dir) {
   if (transition.active) return;
   const snapshot = [...grasses];
@@ -89,16 +103,27 @@ function startTransition(dir) {
     case 'left':  transition.playerEntryX = nw - EDGE - 1; break;
     case 'right': transition.playerEntryX = EDGE + 1;      break;
   }
+  const snapped = snapEntryPosition(
+    transition.playerEntryX, transition.playerEntryY,
+    dir, nw, nh, blockedAtNewRoom
+  );
+  transition.playerEntryX = snapped.x;
+  transition.playerEntryY = snapped.y;
 }
 
 function repositionPlayer(dir) {
   const { w: nw, h: nh } = getRoomPixelSize(transition.toRX, transition.toRY);
+  let intendedX = player.x;
+  let intendedY = player.y;
   switch (dir) {
-    case 'up':    player.y = nh - EDGE - 1; break;
-    case 'down':  player.y = EDGE + 1;      break;
-    case 'left':  player.x = nw - EDGE - 1; break;
-    case 'right': player.x = EDGE + 1;      break;
+    case 'up':    intendedY = nh - EDGE - 1; break;
+    case 'down':  intendedY = EDGE + 1;      break;
+    case 'left':  intendedX = nw - EDGE - 1; break;
+    case 'right': intendedX = EDGE + 1;      break;
   }
+  const snapped = snapEntryPosition(intendedX, intendedY, dir, nw, nh, blockedAtNewRoom);
+  player.x = snapped.x;
+  player.y = snapped.y;
 }
 
 function update() {
