@@ -283,7 +283,8 @@ function updateUI() {
     ['btn-gemtier',   'gemTier',    lvl => `&#128081; Gem Tier Lv${lvl+1}`,    3],
     ['btn-movespeed', 'moveSpeed',  lvl => `&#128070; Move Speed Lv${lvl+1}`,  5],
     ['btn-magnet',    'magnet',     lvl => `&#129516; Magnet Lv${lvl+1}`,      10],
-    ['btn-regrowth',  'regrowth',   lvl => `&#127807; Regrowth`,                1],
+    ['btn-regrowth',    'regrowth',     lvl => `&#127807; Regrowth`,                  1],
+    ['btn-magnetsword', 'magnetSword',  lvl => `&#129522;&#9876;&#65039; Magnet Sword Lv${lvl+1}`, 5],
   ];
 
   for (const [btnId, id, label, maxLevel] of defs) {

@@ -8,7 +8,8 @@ export const upgrades = {
   gemTier:    { level: 0, baseCost: 30,  costMult: 2.0, maxLevel: 3 },
   moveSpeed:  { level: 0, baseCost: 25,  costMult: 1.8, maxLevel: 5 },
   magnet:     { level: 0, baseCost: 25,  costMult: 1.6, maxLevel: 10 },
-  regrowth:   { level: 0, baseCost: 60,  costMult: 1.0, maxLevel: 1 },
+  regrowth:     { level: 0, baseCost: 60,  costMult: 1.0, maxLevel: 1 },
+  magnetSword:  { level: 0, baseCost: 30,  costMult: 1.7, maxLevel: 5 },
 };
 
 export function getUpgradeCost(id) {

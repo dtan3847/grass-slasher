@@ -2,7 +2,7 @@ import { TILE } from './geometry.js';
 import { player, getSlashHitbox } from './player.js';
 import { upgrades } from './upgrades.js';
 import { testPoint } from './hitbox.js';
-import { spawnGem, TIER_WEIGHTS } from './gems.js';
+import { gems, spawnGem, TIER_WEIGHTS } from './gems.js';
 import { addCutParticles } from './render.js';
 import { getLayout, roomX, roomY } from './world.js';
 
@@ -66,6 +66,28 @@ export function checkSlashHits(sweepAngle, recordTarget, prevAngle) {
         halfAngTol: +halfAngTol.toFixed(3),
         hit,
       });
+    }
+  }
+
+  if (upgrades.magnetSword.level > 0) {
+    for (const gm of gems) {
+      const dx = gm.x - player.x;
+      const dy = gm.y - player.y;
+      if (dx * dx + dy * dy > coarseReach * coarseReach) continue;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      let hit;
+      if (prevAngle !== null && prevAngle !== undefined) {
+        hit = testSweptArc(wedgePart, dx, dy, prevAngle, sweepAngle, dist, angle);
+      } else {
+        hit = testPoint(wedgePart, dx, dy, sweepAngle);
+      }
+      if (hit && dist > 0) {
+        gm.rest = false;
+        const pull = 2 + upgrades.magnetSword.level * 1.5;
+        gm.vx += (-dx / dist) * pull;
+        gm.vy += (-dy / dist) * pull;
+      }
     }
   }
 }
