@@ -46,6 +46,7 @@ export const player = {
   retractDur: 5,
   autoSlashCooldown: 0,
   lastHorizDir: 1,
+  prevSlashAngle: null,
   get speed()      { return 2.8 + upgrades.moveSpeed.level * 0.4; },
   get slashRange() { return 44 + upgrades.slashRange.level * 12; },
 };
@@ -70,6 +71,7 @@ export function startSweep(cardinal) {
   player.slashState    = 'sweeping';
   player.slashTimer    = player.sweepDur;
   player.slashCardinal = cardinal;
+  player.prevSlashAngle = null;
   if (cardinal === 1) {
     if (player.lastHorizDir >= 0) {
       SLASH_ARCS[1] = { start: 0, delta: Math.PI / 2 };

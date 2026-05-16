@@ -31,7 +31,7 @@ export function loadRoom(rx, ry) {
 
 export function initGrass() { loadRoom(roomX, roomY); }
 
-export function checkSlashHits(sweepAngle, recordTarget) {
+export function checkSlashHits(sweepAngle, recordTarget, prevAngle) {
   const wedgePart = getSlashHitbox(player.slashCardinal)[0];
   const coarseReach = wedgePart.reach + 13;
 
@@ -42,7 +42,16 @@ export function checkSlashHits(sweepAngle, recordTarget) {
     if (dx * dx + dy * dy > coarseReach * coarseReach) continue;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx);
-    const hit = testPoint(wedgePart, dx, dy, sweepAngle);
+
+    let hit;
+    if (prevAngle !== null && prevAngle !== undefined) {
+      // Swept-arc test: check if the tile angle falls anywhere in the interval
+      // [prevAngle, sweepAngle] swept this frame, accounting for direction.
+      hit = testSweptArc(wedgePart, dx, dy, prevAngle, sweepAngle, dist, angle);
+    } else {
+      hit = testPoint(wedgePart, dx, dy, sweepAngle);
+    }
+
     if (hit) cutGrass(g);
     if (recordTarget) {
       const halfAngTol = dist > 0 ? Math.atan2(13, dist) : Math.PI;
@@ -59,6 +68,32 @@ export function checkSlashHits(sweepAngle, recordTarget) {
       });
     }
   }
+}
+
+// Test whether a point falls within the angular interval swept from prevAngle
+// to sweepAngle (inclusive, with halfAngTol padding) and within radial reach.
+function testSweptArc(wedgePart, dx, dy, prevAngle, sweepAngle, dist, angle) {
+  if (dist > wedgePart.reach + 13) return false;
+  const halfAngTol = dist > 0 ? Math.atan2(13, dist) : Math.PI;
+
+  // Determine sweep direction from the sign of delta in the arc.
+  // The swept interval goes from prevAngle toward sweepAngle.
+  // Normalise to find the angular gap in sweep direction.
+  let delta = sweepAngle - prevAngle;
+  while (delta >  Math.PI) delta -= Math.PI * 2;
+  while (delta < -Math.PI) delta += Math.PI * 2;
+
+  // Offset from prevAngle to tile angle, in same direction as delta.
+  let d = angle - prevAngle;
+  while (d >  Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  if (delta < 0 && d > 0) d -= Math.PI * 2;
+  if (delta > 0 && d < 0) d += Math.PI * 2;
+
+  // Hit if tile angle (with tolerance) falls within [0, |delta|] offset from prevAngle.
+  const absD = delta >= 0 ? d : -d;
+  const absDelta = Math.abs(delta);
+  return absD >= -halfAngTol && absD <= absDelta + halfAngTol;
 }
 
 export function checkSlashCap(rectPart) {
