@@ -177,7 +177,8 @@ function update() {
     if (debugMode && currentSlashRecord) {
       frameRecord = { frame: frameCount, t: +t.toFixed(3), currentAngle: +currentAngle.toFixed(3), grasses: [] };
     }
-    checkSlashHits(currentAngle, frameRecord);
+    checkSlashHits(currentAngle, frameRecord, player.prevSlashAngle);
+    player.prevSlashAngle = currentAngle;
     if (frameRecord) currentSlashRecord.frames.push(frameRecord);
   }
 
@@ -186,11 +187,12 @@ function update() {
     if (player.slashTimer === 0) {
       if (player.slashState === 'sweeping') {
         const arc = SLASH_ARCS[player.slashCardinal];
+        const finalAngle = arc.start + arc.delta;
         let finalFrame = null;
         if (debugMode && currentSlashRecord) {
-          finalFrame = { frame: frameCount, t: 1.0, currentAngle: +(arc.start + arc.delta).toFixed(3), grasses: [] };
+          finalFrame = { frame: frameCount, t: 1.0, currentAngle: +finalAngle.toFixed(3), grasses: [] };
         }
-        checkSlashHits(arc.start + arc.delta, finalFrame);
+        checkSlashHits(finalAngle, finalFrame, player.prevSlashAngle);
         if (debugMode && currentSlashRecord) {
           if (finalFrame) currentSlashRecord.frames.push(finalFrame);
           slashRecords.push(currentSlashRecord);
@@ -219,7 +221,7 @@ function update() {
   for (const g of grasses) {
     if (!g.alive) {
       if (g.cutAnim > 0) g.cutAnim -= 0.05;
-      if (grassSpawnEnabled) {
+      if (grassSpawnEnabled && upgrades.regrowth.level > 0) {
         g.respawnTimer--;
         if (g.respawnTimer <= 0) {
           if (Math.hypot(player.x - g.x, player.y - g.y) < 18) {
@@ -256,6 +258,7 @@ function updateUI() {
     ['btn-gemtier',   'gemTier',    lvl => `&#128081; Gem Tier Lv${lvl+1}`,    3],
     ['btn-movespeed', 'moveSpeed',  lvl => `&#128070; Move Speed Lv${lvl+1}`,  5],
     ['btn-magnet',    'magnet',     lvl => `&#129516; Magnet Lv${lvl+1}`,      20],
+    ['btn-regrowth',  'regrowth',   lvl => `&#127807; Regrowth`,                1],
   ];
 
   for (const [btnId, id, label, maxLevel] of defs) {
