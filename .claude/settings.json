@@ -8,7 +8,8 @@
       "PowerShell(git commit *)",
       "PowerShell(git diff *)",
       "PowerShell(git status *)",
-      "PowerShell(npx playwright *)"
+      "PowerShell(npx playwright *)",
+      "PowerShell(git stash *)"
     ]
   },
   "hooks": {

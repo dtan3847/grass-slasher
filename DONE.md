@@ -7,6 +7,14 @@
 - [x] [bug] player stuck after screen transition if rock at entry tile — new `src/transition-util.js` exports `snapEntryPosition`: scans perpendicular-to-travel tile centers outward from intended spawn, returns nearest unblocked. `startTransition` + `repositionPlayer` both call helper via new `blockedAtNewRoom` (reads `transition.toRX/toRY` not committed `roomX/roomY`). Unit tests `tests/unit/transition-util.test.js` cover 4 cardinals + multi-block + all-blocked fallback.
 
 
+- [x] [feature] `magnetSword` upgrade — slash arc applies velocity impulse (`pull = 2 + level*1.5`) to gems in hitbox. lv0 = no effect. Does not collect on hit; pickupDist=14 still handles that. Shop button + updateUI entry. `tests/magnet.spec.js` tests 5–7: lv0 no-pull, lv1 in-arc pull+collect, lv1 out-of-arc no-pull. (tuning TODO logged separately)
+
+- [x] [feature] magnet behaviors Playwright spec — `tests/magnet.spec.js` with 7 tests: self-magnet lv0/lv1/lv1-negative/lv10 (tests 1–4), magnetSword lv0/lv1-in-arc/lv1-out-of-arc (tests 5–7).
+
+- [x] [refactor] self-magnet range half + cap 10 — formula changed to `44 + level*6` (was `44 + level*12`), `magnet.maxLevel` reduced to 10. `tests/magnet.spec.js` test 4 updated to match new lv10 range (104px).
+
+- [x] [refactor] magnet range matches slash reach — formula changed from `level * 25` to `44 + level * 12` in `src/gems.js`, mirroring `slashRange`. `magnet.maxLevel` raised to 20. E2E spec `tests/magnet.spec.js` (4 tests; test 2 is key discriminator: gem at 30px collected at lv1 with new range=56px, would fail with old range=25px).
+
 - [x] [feature] visual review via video artifact — Playwright `visual` project (separate from `default` E2E), `video: 'on'`, viewport 800×700. `tests/visual/example.spec.js` template uses `page.waitForTimeout()` (NOT `__test.tick()`) so rAF render loop captures wall-clock animation. Tile-center alignment: player+grass coords must be `col*32+16` to render centered. New `.github/workflows/visual-review.yml` runs on push when `tests/visual/**`/`src/**`/`index.html`/`playwright.config.js` changes, uploads `test-results/` as `visual-review-<sha>` zip (30-day). Dev does NOT run video locally; CI only.
 
 - [x] [feature] Vitest unit-test layer — `vitest.config.js` (Node env, `tests/unit/**/*.test.js`). `tests/unit/upgrades.test.js` asserts `getUpgradeCost('gemMult')` at lv0 + lv2. `package.json` scripts: `test`=vitest, `test:watch`, `e2e`/`e2e:headed`/`e2e:debug`=Playwright. `playwright.config.js` gained `testMatch: ['**/*.spec.js']` so Playwright doesn't try to load `.test.js` ESM files. `.github/workflows/deploy.yml` runs `npm test` before build. `upgrades.js → gems.js → render.js → canvas.js` import chain Node-safe because canvas.js has no top-level DOM access.
