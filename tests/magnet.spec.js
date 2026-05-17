@@ -134,9 +134,9 @@ test('lv1 magnetSword — gem in arc is pulled and collected', async ({ page }) 
     t.player.slashTimer = 0;
     t.setUpgradeLevel('magnet', 0);
     t.setUpgradeLevel('magnetSword', 1);
-    // gem directly above player at dist=44, angle=-PI/2 (start of right arc)
-    // one-shot pull=2.3 carries it down to within 14px in ~27 ticks
-    t.gems.push({ x: 160, y: 84, vx: 0, vy: 0, rest: true, amount: 1, tier: 0, baseValue: 1, life: 1800, bob: 0 });
+    // gem directly above player at dist=40, angle=-PI/2 (start of right arc)
+    // one-shot pull=1.8 (lv1: 1.5+1*1*0.3), max travel=1.8/0.06=30px → final dist=10px < 14px collect
+    t.gems.push({ x: 160, y: 88, vx: 0, vy: 0, rest: true, amount: 1, tier: 0, baseValue: 1, life: 1800, bob: 0 });
   });
 
   await page.evaluate(() => {
@@ -148,7 +148,7 @@ test('lv1 magnetSword — gem in arc is pulled and collected', async ({ page }) 
   const lenMid = await page.evaluate(() => window.__test.gems.length);
   expect(lenMid).toBe(1);
 
-  await page.evaluate(() => window.__test.tick(50));
+  await page.evaluate(() => window.__test.tick(90));
 
   const len = await page.evaluate(() => window.__test.gems.length);
   expect(len).toBe(0);
@@ -206,7 +206,7 @@ test('lv1 magnetSword — gem spawned by slash is not pulled', async ({ page }) 
 
   await page.evaluate(() => {
     window.__test.keydown('Space');
-    window.__test.tick(15);
+    window.__test.tick(8);
   });
 
   // gem was spawned by the slash — must not have been pulled to player by magnetSword

@@ -88,8 +88,8 @@ export function checkSlashHits(sweepAngle, recordTarget, prevAngle) {
       if (hit && dist > 0) {
         gm.rest = false;
         gm.magnetSwordHit = true;
-        const pull = 1.5 + upgrades.magnetSword.level * 0.8;
-        const jitter = (Math.random() - 0.5) * 0.4;
+        const pull = 1.5 + upgrades.magnetSword.level * upgrades.magnetSword.level * 0.3;
+        const jitter = (Math.random() - 0.5) * 0.5 / upgrades.magnetSword.level;
         const cos = Math.cos(jitter), sin = Math.sin(jitter);
         const nx = (-dx / dist) * cos - (-dy / dist) * sin;
         const ny = (-dx / dist) * sin + (-dy / dist) * cos;
